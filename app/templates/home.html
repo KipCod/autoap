@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="toolbar">
+    <form method="get" action="/">
+        <input type="text" name="query" placeholder="Search by bundle or keywords" value="{{ query }}">
+        <button type="submit">Search</button>
+    </form>
+</section>
+
+{% if bundles %}
+<section class="bundle-grid">
+    {% for bundle in bundles %}
+    <article class="bundle-card">
+        <header>
+            <h2><a href="/bundle/{{ bundle.id }}">{{ bundle.bundle_name }}</a></h2>
+            <span class="part">{{ bundle.part }}</span>
+        </header>
+        <p class="keywords">Keywords: {{ bundle.keywords or "none" }}</p>
+        <p class="description">{{ bundle.description or "No description yet." }}</p>
+        <footer>
+            <small>Updated: {{ bundle.updated_date }}</small>
+            <small>Todo: {{ bundle.todo or "—" }}</small>
+        </footer>
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<p>No bundles yet. <a href="/bundle/new">Create the first one?</a></p>
+{% endif %}
+{% endblock %}
+

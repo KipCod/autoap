@@ -1,0 +1,117 @@
+:root {
+    font-family: "Segoe UI", sans-serif;
+    color: #0f172a;
+    background-color: #f8fafc;
+}
+
+body {
+    margin: 0;
+}
+
+header {
+    background: #0f172a;
+    color: #fff;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header a {
+    color: #38bdf8;
+    text-decoration: none;
+    margin-left: 1rem;
+}
+
+main {
+    padding: 2rem;
+}
+
+.toolbar,
+.bundle-form,
+.memo-section {
+    margin-bottom: 1.5rem;
+}
+
+input,
+textarea,
+button {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+    border: 1px solid #cbd5f5;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+button {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+.bundle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.bundle-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
+}
+
+.bundle-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    background: none;
+    color: inherit;
+    padding: 0;
+}
+
+.bundle-card header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.bundle-card .part {
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+th,
+td {
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+}
+
+.danger button {
+    background: #dc2626;
+}
+
+.danger button:hover {
+    background: #b91c1c;
+}
+
+.command-preview {
+    background: #e0f2fe;
+    padding: 1rem;
+    border-radius: 8px;
+}
+

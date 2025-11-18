@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="bundle-detail">
+    <h2>{{ bundle.bundle_name }} (ID {{ bundle.id }})</h2>
+    <form action="/bundle/{{ bundle.id }}/delete" method="post" class="danger">
+        <button type="submit" onclick="return confirm('Delete this bundle?');">Delete</button>
+    </form>
+
+    <form action="/bundle/{{ bundle.id }}/update" method="post" class="bundle-form">
+        <label>Part
+            <input type="text" name="part" value="{{ bundle.part }}" required>
+        </label>
+        <label>Bundle Name
+            <input type="text" name="bundle_name" value="{{ bundle.bundle_name }}" required>
+        </label>
+        <label>Command
+            <textarea name="command_text" rows="6">{{ bundle.command_text }}</textarea>
+        </label>
+        <p class="hint">Commands detected: {{ commands | length }}</p>
+        <label>Description
+            <textarea name="description" rows="3">{{ bundle.description }}</textarea>
+        </label>
+        <label>Keywords
+            <input type="text" name="keywords" value="{{ bundle.keywords }}">
+        </label>
+        <label>Expected Outcome
+            <textarea name="expected_outcome" rows="3">{{ bundle.expected_outcome }}</textarea>
+        </label>
+        <label>Interpretation
+            <textarea name="interpretation" rows="3">{{ bundle.interpretation }}</textarea>
+        </label>
+        <label>Updated Date
+            <input type="date" name="updated_date" value="{{ bundle.updated_date }}">
+        </label>
+        <label>Todo
+            <input type="text" name="todo" value="{{ bundle.todo }}">
+        </label>
+        <button type="submit">Update Bundle</button>
+    </form>
+</section>
+
+<section class="memo-section">
+    <h3>Command Memos</h3>
+    <form action="/bundle/{{ bundle.id }}/memos" method="post">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Command</th>
+                    <th>Memo</th>
+                    <th>OneNote Link</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for memo in memos %}
+                <tr>
+                    <td>{{ memo.command_order }}</td>
+                    <td><code>{{ memo.command_text }}</code></td>
+                    <td>
+                        <textarea name="memo_text_{{ memo.command_order }}" rows="2">{{ memo.memo_text }}</textarea>
+                    </td>
+                    <td>
+                        <input type="url" name="onenote_link_{{ memo.command_order }}" value="{{ memo.onenote_link }}">
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Save Memo Updates</button>
+    </form>
+</section>
+{% endblock %}
+

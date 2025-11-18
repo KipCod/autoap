@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>New Action Bundle</h2>
+<form action="/bundle" method="post" class="bundle-form">
+    <label>Part
+        <input type="text" name="part" required>
+    </label>
+    <label>Bundle Name
+        <input type="text" name="bundle_name" required>
+    </label>
+    <label>Command
+        <textarea name="command_text" rows="6" placeholder="One command per line" id="commandInput"></textarea>
+    </label>
+    <div class="command-preview">
+        <h3>Command Preview</h3>
+        <ol id="previewList"></ol>
+    </div>
+    <label>Description
+        <textarea name="description" rows="3"></textarea>
+    </label>
+    <label>Keywords
+        <input type="text" name="keywords" placeholder="Comma separated">
+    </label>
+    <label>Expected Outcome
+        <textarea name="expected_outcome" rows="3"></textarea>
+    </label>
+    <label>Interpretation
+        <textarea name="interpretation" rows="3"></textarea>
+    </label>
+    <label>Updated Date
+        <input type="date" name="updated_date">
+    </label>
+    <label>Todo
+        <input type="text" name="todo">
+    </label>
+    <button type="submit">Save Bundle</button>
+</form>
+
+<script>
+const textarea = document.getElementById("commandInput");
+const preview = document.getElementById("previewList");
+const updatePreview = () => {
+    const commands = textarea.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    preview.innerHTML = "";
+    commands.forEach(cmd => {
+        const li = document.createElement("li");
+        li.textContent = cmd;
+        preview.appendChild(li);
+    });
+};
+textarea.addEventListener("input", updatePreview);
+</script>
+{% endblock %}
+
