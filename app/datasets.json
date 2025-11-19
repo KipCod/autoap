@@ -1,0 +1,19 @@
+{
+  "datasets": [
+    {
+      "id": "set_a",
+      "label": "세트 A",
+      "main_csv": "set_a_main.csv",
+      "memo_csv": "set_a_memos.csv",
+      "link_csv": "set_a_links.csv"
+    },
+    {
+      "id": "set_b",
+      "label": "세트 B",
+      "main_csv": "set_b_main.csv",
+      "memo_csv": "set_b_memos.csv",
+      "link_csv": "set_b_links.csv"
+    }
+  ]
+}
+

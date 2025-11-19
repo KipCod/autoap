@@ -1,38 +1,25 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>New Action Bundle</h2>
+<h2>New Action Bundle — {{ active_dataset.label if active_dataset else 'Dataset' }}</h2>
 <form action="/bundle" method="post" class="bundle-form">
+    <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
     <label>Part
         <input type="text" name="part" required>
     </label>
     <label>Bundle Name
         <input type="text" name="bundle_name" required>
     </label>
+    <label>Keywords
+        <input type="text" name="keywords" placeholder="Comma separated">
+    </label>
     <label>Command
-        <textarea name="command_text" rows="6" placeholder="One command per line" id="commandInput"></textarea>
+        <textarea name="command_text" rows="6" placeholder="한 줄에 하나씩 명령어를 입력하세요." id="commandInput"></textarea>
     </label>
     <div class="command-preview">
         <h3>Command Preview</h3>
         <ol id="previewList"></ol>
     </div>
-    <label>Description
-        <textarea name="description" rows="3"></textarea>
-    </label>
-    <label>Keywords
-        <input type="text" name="keywords" placeholder="Comma separated">
-    </label>
-    <label>Expected Outcome
-        <textarea name="expected_outcome" rows="3"></textarea>
-    </label>
-    <label>Interpretation
-        <textarea name="interpretation" rows="3"></textarea>
-    </label>
-    <label>Updated Date
-        <input type="date" name="updated_date">
-    </label>
-    <label>Todo
-        <input type="text" name="todo">
-    </label>
+    <p class="hint">Description은 명령어별 메모 섹션에서 입력할 수 있습니다.</p>
     <button type="submit">Save Bundle</button>
 </form>
 

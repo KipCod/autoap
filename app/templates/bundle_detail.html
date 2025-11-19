@@ -1,40 +1,28 @@
 {% extends "layout.html" %}
 {% block content %}
 <section class="bundle-detail">
-    <h2>{{ bundle.bundle_name }} (ID {{ bundle.id }})</h2>
+    <h2>{{ bundle.bundle_name }} (ID {{ bundle.id }}) — {{ active_dataset.label if active_dataset else '' }}</h2>
     <form action="/bundle/{{ bundle.id }}/delete" method="post" class="danger">
+        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
         <button type="submit" onclick="return confirm('Delete this bundle?');">Delete</button>
     </form>
 
     <form action="/bundle/{{ bundle.id }}/update" method="post" class="bundle-form">
+        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
         <label>Part
             <input type="text" name="part" value="{{ bundle.part }}" required>
         </label>
         <label>Bundle Name
             <input type="text" name="bundle_name" value="{{ bundle.bundle_name }}" required>
         </label>
+        <label>Keywords
+            <input type="text" name="keywords" value="{{ bundle.keywords }}">
+        </label>
         <label>Command
             <textarea name="command_text" rows="6">{{ bundle.command_text }}</textarea>
         </label>
         <p class="hint">Commands detected: {{ commands | length }}</p>
-        <label>Description
-            <textarea name="description" rows="3">{{ bundle.description }}</textarea>
-        </label>
-        <label>Keywords
-            <input type="text" name="keywords" value="{{ bundle.keywords }}">
-        </label>
-        <label>Expected Outcome
-            <textarea name="expected_outcome" rows="3">{{ bundle.expected_outcome }}</textarea>
-        </label>
-        <label>Interpretation
-            <textarea name="interpretation" rows="3">{{ bundle.interpretation }}</textarea>
-        </label>
-        <label>Updated Date
-            <input type="date" name="updated_date" value="{{ bundle.updated_date }}">
-        </label>
-        <label>Todo
-            <input type="text" name="todo" value="{{ bundle.todo }}">
-        </label>
+        <p class="hint">Description은 아래 Command Memos 섹션에서 명령어별로 관리합니다.</p>
         <button type="submit">Update Bundle</button>
     </form>
 </section>
@@ -42,11 +30,13 @@
 <section class="memo-section">
     <h3>Command Memos</h3>
     <form action="/bundle/{{ bundle.id }}/memos" method="post">
+        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
         <table>
             <thead>
                 <tr>
                     <th>#</th>
                     <th>Command</th>
+                    <th>Description</th>
                     <th>Memo</th>
                     <th>OneNote Link</th>
                 </tr>
@@ -56,6 +46,9 @@
                 <tr>
                     <td>{{ memo.command_order }}</td>
                     <td><code>{{ memo.command_text }}</code></td>
+                    <td>
+                        <textarea name="description_{{ memo.command_order }}" rows="2">{{ memo.description }}</textarea>
+                    </td>
                     <td>
                         <textarea name="memo_text_{{ memo.command_order }}" rows="2">{{ memo.memo_text }}</textarea>
                     </td>
@@ -68,6 +61,72 @@
         </table>
         <button type="submit">Save Memo Updates</button>
     </form>
+</section>
+
+<section class="bundle-links" id="bundle-links">
+    <h3>참고 링크</h3>
+    <form action="/links" method="post" class="bundle-form link-form">
+        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+        <input type="hidden" name="bundle_id" value="{{ bundle.id }}">
+        <input type="hidden" name="return_to" value="/bundle/{{ bundle.id }}?dataset={{ active_dataset_id }}#bundle-links">
+        <label>URL
+            <input type="url" name="url" placeholder="https://example.com" required>
+        </label>
+        <label>Description
+            <textarea name="description" rows="2" placeholder="링크 설명을 입력하세요."></textarea>
+        </label>
+        <label>Tags
+            <input type="text" name="tags" placeholder="쉼표로 구분된 태그 (선택)">
+        </label>
+        <label>Command (선택)
+            <select name="command_order">
+                <option value="">전체 번들</option>
+                {% for memo in memos %}
+                <option value="{{ memo.command_order }}">{{ memo.command_order }}. {{ memo.command_text }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">링크 추가</button>
+    </form>
+
+    {% if bundle_links %}
+    <table class="link-table">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Description</th>
+                <th>Tags</th>
+                <th>Target</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in bundle_links %}
+            <tr>
+                <td><a href="{{ item.entry.url }}" target="_blank" rel="noopener">{{ item.entry.url }}</a></td>
+                <td>{{ item.entry.description or '—' }}</td>
+                <td>{{ item.entry.tags or '—' }}</td>
+                <td>
+                    {% if item.command_label %}
+                        #{{ item.entry.command_order }} — {{ item.command_label }}
+                    {% else %}
+                        전체 번들
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="post" action="/links/{{ item.entry.id }}/delete">
+                        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+                        <input type="hidden" name="return_to" value="/bundle/{{ bundle.id }}?dataset={{ active_dataset_id }}#bundle-links">
+                        <button type="submit" class="link-delete">삭제</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>등록된 링크가 없습니다.</p>
+    {% endif %}
 </section>
 {% endblock %}
 

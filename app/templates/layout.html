@@ -6,14 +6,20 @@
     <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
 </head>
 <body>
-    <header>
-        <h1><a href="/">Action Bundle Manager</a></h1>
-        <nav>
-            <a href="/bundle/new">+ New Bundle</a>
-            <a href="/export/main">Export Main CSV</a>
-            <a href="/export/memos">Export Memo CSV</a>
-        </nav>
-    </header>
+<header>
+    <div class="brand">
+        <h1><a href="/?dataset={{ active_dataset_id or '' }}">Action Bundle Manager</a></h1>
+        {% if active_dataset %}
+        <span class="dataset-label">{{ active_dataset.label }}</span>
+        {% endif %}
+    </div>
+    <nav>
+        <a href="/bundle/new?dataset={{ active_dataset_id or '' }}">+ New Bundle</a>
+        <a href="/export/main?dataset={{ active_dataset_id or '' }}">Export Main CSV</a>
+        <a href="/export/memos?dataset={{ active_dataset_id or '' }}">Export Memo CSV</a>
+        <a href="/export/links?dataset={{ active_dataset_id or '' }}">Export Link CSV</a>
+    </nav>
+</header>
     <main>
         {% block content %}{% endblock %}
     </main>

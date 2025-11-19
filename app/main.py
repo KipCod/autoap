@@ -1,33 +1,76 @@
-from datetime import date
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from .dataset_config import DatasetDefinition, load_dataset_definitions
 from .database import get_all_data, save_all_data
-from .models import ActionBundle, CommandMemo
-from .services import get_next_bundle_id, normalize_commands, sync_memos, _parse_date
+from .models import ActionBundle, DatasetState, LinkEntry
+from .services import (
+    get_next_bundle_id,
+    get_next_link_id,
+    keyword_candidates,
+    normalize_commands,
+    sync_memos,
+)
 
 app = FastAPI(title="Action Bundle Manager")
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# 메모리 내 데이터 저장소
-_bundles: Dict[int, ActionBundle] = {}
-_memos_by_action: Dict[int, List[CommandMemo]] = {}
+DATASET_DEFINITIONS: List[DatasetDefinition] = load_dataset_definitions()
+DATASET_MAP: Dict[str, DatasetDefinition] = {dataset.id: dataset for dataset in DATASET_DEFINITIONS}
+DEFAULT_DATASET_ID = DATASET_DEFINITIONS[0].id
+
+# 메모리 내 데이터 저장소 (세트별)
+_dataset_state: Dict[str, DatasetState] = {}
 
 
 def _load_data() -> None:
-    """CSV 파일에서 데이터 로드"""
-    global _bundles, _memos_by_action
-    _bundles, _memos_by_action = get_all_data()
+    """각 세트의 CSV 데이터를 메모리에 로드"""
+    for definition in DATASET_DEFINITIONS:
+        bundles, memos_by_action, links = get_all_data(
+            definition.main_csv, definition.memo_csv, definition.link_csv
+        )
+        _dataset_state[definition.id] = DatasetState(
+            bundles=bundles,
+            memos_by_action=memos_by_action,
+            links=links,
+        )
 
 
-def _save_data() -> None:
-    """데이터를 CSV 파일에 저장"""
-    save_all_data(_bundles, _memos_by_action)
+def _get_dataset(dataset_id: str | None) -> Tuple[str, DatasetDefinition, DatasetState]:
+    """dataset 식별자를 검증하고 상태 반환"""
+    resolved_id = dataset_id or DEFAULT_DATASET_ID
+    if resolved_id not in DATASET_MAP:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    state = _dataset_state.get(resolved_id)
+    if state is None:
+        definition = DATASET_MAP[resolved_id]
+        bundles, memos_by_action, links = get_all_data(
+            definition.main_csv, definition.memo_csv, definition.link_csv
+        )
+        state = DatasetState(bundles=bundles, memos_by_action=memos_by_action, links=links)
+        _dataset_state[resolved_id] = state
+    return resolved_id, DATASET_MAP[resolved_id], state
+
+
+def _save_dataset(dataset_id: str) -> None:
+    """해당 세트의 데이터를 CSV에 저장"""
+    definition = DATASET_MAP[dataset_id]
+    state = _dataset_state.get(dataset_id)
+    if state is None:
+        return
+    save_all_data(
+        definition.main_csv,
+        definition.memo_csv,
+        definition.link_csv,
+        state.bundles,
+        state.memos_by_action,
+        state.links,
+    )
 
 
 @app.on_event("startup")
@@ -37,131 +80,185 @@ def on_startup() -> None:
 
 
 @app.get("/", response_class=HTMLResponse)
-def read_home(request: Request, query: str | None = None) -> HTMLResponse:
+def read_home(
+    request: Request,
+    dataset: str | None = None,
+    query: str | None = None,
+    view: str = "bundles",
+) -> HTMLResponse:
     """홈 페이지 - 번들 목록 표시"""
-    bundles_list = list(_bundles.values())
-    
+    dataset_id, definition, state = _get_dataset(dataset)
+    view = view if view in {"bundles", "links"} else "bundles"
+    all_bundles = list(state.bundles.values())
+    all_bundles.sort(key=lambda b: b.id or 0, reverse=True)
+
+    bundles_list = all_bundles
     # 검색 필터링
     if query:
         query_lower = query.lower()
         bundles_list = [
             bundle
-            for bundle in bundles_list
+            for bundle in all_bundles
             if query_lower in bundle.bundle_name.lower() or query_lower in bundle.keywords.lower()
         ]
     
-    # 날짜순 정렬 (최신순)
-    bundles_list.sort(key=lambda b: b.updated_date if isinstance(b.updated_date, date) else date.today(), reverse=True)
+    bundle_lookup = {bundle.id: bundle for bundle in all_bundles}
+    bundle_cards = [
+        {"bundle": bundle, "commands": normalize_commands(bundle.command_text)}
+        for bundle in bundles_list
+    ]
+
+    keyword_pool = keyword_candidates(state.bundles)
+
+    link_rows = []
+    for link in sorted(state.links.values(), key=lambda link: link.id or 0):
+        bundle = bundle_lookup.get(link.bundle_id)
+        command_label = None
+        if bundle and link.command_order:
+            memos = state.memos_by_action.get(bundle.id or 0, [])
+            memo = next((m for m in memos if m.command_order == link.command_order), None)
+            if memo:
+                command_label = memo.command_text
+        link_rows.append({"entry": link, "bundle": bundle, "command_label": command_label})
     
-    return templates.TemplateResponse("home.html", {"request": request, "bundles": bundles_list, "query": query or ""})
+    return templates.TemplateResponse(
+        "home.html",
+        {
+            "request": request,
+            "bundles": bundle_cards,
+            "links": link_rows,
+            "query": query or "",
+            "datasets": DATASET_DEFINITIONS,
+            "active_dataset": definition,
+            "active_dataset_id": dataset_id,
+            "view": view,
+            "keyword_candidates": keyword_pool,
+            "bundle_options": all_bundles,
+        },
+    )
 
 
 @app.get("/bundle/new", response_class=HTMLResponse)
-def new_bundle_form(request: Request) -> HTMLResponse:
+def new_bundle_form(request: Request, dataset: str | None = None) -> HTMLResponse:
     """새 번들 생성 폼"""
-    return templates.TemplateResponse("bundle_form.html", {"request": request, "bundle": None})
+    dataset_id, definition, _ = _get_dataset(dataset)
+    return templates.TemplateResponse(
+        "bundle_form.html",
+        {
+            "request": request,
+            "bundle": None,
+            "active_dataset": definition,
+            "active_dataset_id": dataset_id,
+        },
+    )
 
 
 @app.post("/bundle")
 def create_bundle(
+    dataset: str = Form(...),
     part: str = Form(...),
     bundle_name: str = Form(...),
     command_text: str = Form(""),
-    description: str = Form(""),
     keywords: str = Form(""),
-    expected_outcome: str = Form(""),
-    interpretation: str = Form(""),
-    updated_date: str = Form(""),
-    todo: str = Form(""),
 ) -> RedirectResponse:
     """새 번들 생성"""
-    bundle_id = get_next_bundle_id(_bundles)
+    dataset_id, _, state = _get_dataset(dataset)
+    bundle_id = get_next_bundle_id(state.bundles)
     
     bundle = ActionBundle(
         id=bundle_id,
         part=part,
         bundle_name=bundle_name,
         command_text=command_text.strip(),
-        description=description,
         keywords=keywords,
-        expected_outcome=expected_outcome,
-        interpretation=interpretation,
-        updated_date=_parse_date(updated_date),
-        todo=todo,
     )
     
     # 명령어를 메모로 동기화
     sync_memos(bundle, bundle.command_text)
     
-    _bundles[bundle_id] = bundle
-    _memos_by_action[bundle_id] = bundle.memos
+    state.bundles[bundle_id] = bundle
+    state.memos_by_action[bundle_id] = bundle.memos
     
-    _save_data()
+    _save_dataset(dataset_id)
     
-    return RedirectResponse(url=f"/bundle/{bundle_id}", status_code=303)
+    return RedirectResponse(url=f"/bundle/{bundle_id}?dataset={dataset_id}", status_code=303)
 
 
 @app.get("/bundle/{bundle_id}", response_class=HTMLResponse)
-def bundle_detail(bundle_id: int, request: Request) -> HTMLResponse:
+def bundle_detail(bundle_id: int, request: Request, dataset: str | None = None) -> HTMLResponse:
     """번들 상세 페이지"""
-    bundle = _bundles.get(bundle_id)
+    dataset_id, definition, state = _get_dataset(dataset)
+    bundle = state.bundles.get(bundle_id)
     if not bundle:
         raise HTTPException(status_code=404, detail="Bundle not found")
     
     memos = sorted(bundle.memos, key=lambda memo: memo.command_order)
     command_list = normalize_commands(bundle.command_text)
     
+    bundle_links: List[dict] = []
+    for link in sorted(state.links.values(), key=lambda l: l.id or 0):
+        if link.bundle_id != bundle_id:
+            continue
+        command_label = None
+        if link.command_order:
+            memo = next((m for m in memos if m.command_order == link.command_order), None)
+            if memo:
+                command_label = memo.command_text
+        bundle_links.append({"entry": link, "command_label": command_label})
+
     return templates.TemplateResponse(
         "bundle_detail.html",
-        {"request": request, "bundle": bundle, "memos": memos, "commands": command_list},
+        {
+            "request": request,
+            "bundle": bundle,
+            "memos": memos,
+            "commands": command_list,
+            "active_dataset": definition,
+            "active_dataset_id": dataset_id,
+             "bundle_links": bundle_links,
+        },
     )
 
 
 @app.post("/bundle/{bundle_id}/update")
 def update_bundle(
     bundle_id: int,
+    dataset: str = Form(...),
     part: str = Form(...),
     bundle_name: str = Form(...),
     command_text: str = Form(""),
-    description: str = Form(""),
     keywords: str = Form(""),
-    expected_outcome: str = Form(""),
-    interpretation: str = Form(""),
-    updated_date: str = Form(""),
-    todo: str = Form(""),
 ) -> RedirectResponse:
     """번들 수정"""
-    bundle = _bundles.get(bundle_id)
+    dataset_id, _, state = _get_dataset(dataset)
+    bundle = state.bundles.get(bundle_id)
     if not bundle:
         raise HTTPException(status_code=404, detail="Bundle not found")
     
     bundle.part = part
     bundle.bundle_name = bundle_name
     bundle.command_text = command_text.strip()
-    bundle.description = description
     bundle.keywords = keywords
-    bundle.expected_outcome = expected_outcome
-    bundle.interpretation = interpretation
-    bundle.updated_date = _parse_date(updated_date)
-    bundle.todo = todo
     
     # 명령어 변경 시 메모 동기화
     sync_memos(bundle, bundle.command_text)
-    _memos_by_action[bundle_id] = bundle.memos
+    state.memos_by_action[bundle_id] = bundle.memos
     
-    _save_data()
+    _save_dataset(dataset_id)
     
-    return RedirectResponse(url=f"/bundle/{bundle_id}", status_code=303)
+    return RedirectResponse(url=f"/bundle/{bundle_id}?dataset={dataset_id}", status_code=303)
 
 
 @app.post("/bundle/{bundle_id}/memos")
 async def update_memos(bundle_id: int, request: Request) -> RedirectResponse:
     """메모 업데이트"""
-    bundle = _bundles.get(bundle_id)
+    form = await request.form()
+    dataset_key = form.get("dataset")
+    dataset_id, _, state = _get_dataset(dataset_key)
+    bundle = state.bundles.get(bundle_id)
     if not bundle:
         raise HTTPException(status_code=404, detail="Bundle not found")
     
-    form = await request.form()
     memo_payload: List[dict[str, str]] = []
     
     for key, value in form.multi_items():
@@ -174,87 +271,131 @@ async def update_memos(bundle_id: int, request: Request) -> RedirectResponse:
                     "onenote_link": form.get(f"onenote_link_{order}", ""),
                 }
             )
+        elif key.startswith("description_"):
+            order = int(key.split("_")[-1])
+            memo_payload.append(
+                {
+                    "command_order": order,
+                    "description": value,
+                }
+            )
     
     # 메모 업데이트
+    aggregated: Dict[int, Dict[str, str]] = {}
     for payload in memo_payload:
         order = int(payload["command_order"])
+        aggregated.setdefault(order, {}).update(payload)
+
+    for order, payload in aggregated.items():
         memo = next((m for m in bundle.memos if m.command_order == order), None)
         if memo:
-            memo.memo_text = payload.get("memo_text", "")
-            memo.onenote_link = payload.get("onenote_link", "")
+            if "memo_text" in payload:
+                memo.memo_text = payload.get("memo_text", "")
+                memo.onenote_link = payload.get("onenote_link", "")
+            if "description" in payload:
+                memo.description = payload.get("description", "")
     
-    _memos_by_action[bundle_id] = bundle.memos
-    _save_data()
+    state.memos_by_action[bundle_id] = bundle.memos
+    _save_dataset(dataset_id)
     
-    return RedirectResponse(url=f"/bundle/{bundle_id}", status_code=303)
+    return RedirectResponse(url=f"/bundle/{bundle_id}?dataset={dataset_id}", status_code=303)
 
 
 @app.post("/bundle/{bundle_id}/delete")
-def delete_bundle(bundle_id: int) -> RedirectResponse:
+def delete_bundle(bundle_id: int, dataset: str = Form(...)) -> RedirectResponse:
     """번들 삭제"""
-    if bundle_id in _bundles:
-        del _bundles[bundle_id]
-    if bundle_id in _memos_by_action:
-        del _memos_by_action[bundle_id]
+    dataset_id, _, state = _get_dataset(dataset)
+    if bundle_id in state.bundles:
+        del state.bundles[bundle_id]
+    if bundle_id in state.memos_by_action:
+        del state.memos_by_action[bundle_id]
     
-    _save_data()
+    _save_dataset(dataset_id)
     
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url=f"/?dataset={dataset_id}", status_code=303)
+
+
+@app.post("/links")
+def create_link(
+    dataset: str = Form(...),
+    url: str = Form(...),
+    description: str = Form(""),
+    tags: str = Form(""),
+    bundle_id: str | None = Form(None),
+    command_order: str | None = Form(None),
+    return_to: str | None = Form(None),
+) -> RedirectResponse:
+    """링크 추가"""
+    dataset_id, _, state = _get_dataset(dataset)
+    link_id = get_next_link_id(state.links)
+    entry = LinkEntry(
+        id=link_id,
+        bundle_id=int(bundle_id) if bundle_id else None,
+        command_order=int(command_order) if command_order else None,
+        url=url.strip(),
+        description=description.strip(),
+        tags=tags.strip(),
+    )
+    state.links[link_id] = entry
+    _save_dataset(dataset_id)
+    target = return_to or f"/?dataset={dataset_id}&view=links"
+    return RedirectResponse(url=target, status_code=303)
+
+
+@app.post("/links/{link_id}/delete")
+def delete_link(link_id: int, dataset: str = Form(...), return_to: str | None = Form(None)) -> RedirectResponse:
+    """링크 삭제"""
+    dataset_id, _, state = _get_dataset(dataset)
+    if link_id in state.links:
+        del state.links[link_id]
+        _save_dataset(dataset_id)
+    target = return_to or f"/?dataset={dataset_id}&view=links"
+    return RedirectResponse(url=target, status_code=303)
 
 
 @app.get("/export/main")
-def export_main() -> StreamingResponse:
+def export_main(dataset: str | None = None) -> StreamingResponse:
     """메인 CSV 내보내기"""
-    from .database import save_bundles
     import io
     import csv
-    
+
+    dataset_id, _, state = _get_dataset(dataset)
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["ID", "Part", "Bundle Name", "Command", "Description", "Keywords", "Expected Outcome", "Interpretation", "Updated Date", "Todo"])
+    writer = csv.DictWriter(output, fieldnames=["ID", "Part", "Bundle Name", "Command", "Keywords"])
     writer.writeheader()
     
-    for bundle_id in sorted(_bundles.keys()):
-        bundle = _bundles[bundle_id]
+    for bundle_id in sorted(state.bundles.keys()):
+        bundle = state.bundles[bundle_id]
         writer.writerow(
             {
                 "ID": bundle.id or "",
                 "Part": bundle.part,
                 "Bundle Name": bundle.bundle_name,
                 "Command": bundle.command_text,
-                "Description": bundle.description,
                 "Keywords": bundle.keywords,
-                "Expected Outcome": bundle.expected_outcome,
-                "Interpretation": bundle.interpretation,
-                "Updated Date": (
-                    bundle.updated_date.isoformat()
-                    if isinstance(bundle.updated_date, date)
-                    else str(bundle.updated_date)
-                    if bundle.updated_date
-                    else ""
-                ),
-                "Todo": bundle.todo,
             }
         )
     
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="action_bundles.csv"'},
+        headers={"Content-Disposition": f'attachment; filename="{dataset_id}_action_bundles.csv"'},
     )
 
 
 @app.get("/export/memos")
-def export_memos() -> StreamingResponse:
+def export_memos(dataset: str | None = None) -> StreamingResponse:
     """메모 CSV 내보내기"""
     import io
     import csv
     
+    dataset_id, _, state = _get_dataset(dataset)
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=["ID", "Command ID", "Command Text", "Memo text", "onenote link"])
     writer.writeheader()
     
-    for action_id in sorted(_memos_by_action.keys()):
-        memos = sorted(_memos_by_action[action_id], key=lambda m: m.command_order)
+    for action_id in sorted(state.memos_by_action.keys()):
+        memos = sorted(state.memos_by_action[action_id], key=lambda m: m.command_order)
         for memo in memos:
             writer.writerow(
                 {
@@ -269,7 +410,36 @@ def export_memos() -> StreamingResponse:
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="command_memos.csv"'},
+        headers={"Content-Disposition": f'attachment; filename="{dataset_id}_command_memos.csv"'},
+    )
+
+
+@app.get("/export/links")
+def export_links(dataset: str | None = None) -> StreamingResponse:
+    """링크 CSV 내보내기"""
+    import io
+    import csv
+
+    dataset_id, _, state = _get_dataset(dataset)
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["ID", "URL", "Description", "Tags"])
+    writer.writeheader()
+
+    for link_id in sorted(state.links.keys()):
+        link = state.links[link_id]
+        writer.writerow(
+            {
+                "ID": link.id or "",
+                "URL": link.url,
+                "Description": link.description,
+                "Tags": link.tags,
+            }
+        )
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{dataset_id}_links.csv"'},
     )
 
 
