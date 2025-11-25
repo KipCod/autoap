@@ -66,6 +66,29 @@ def _resolve_path(path_str: str) -> Path:
     return (DATA_DIR / path).resolve()
 
 
+def _normalize_image_path(image_path: str) -> str:
+    """이미지 경로를 static 폴더 기준 상대 경로로 정규화.
+    
+    - 절대 경로인 경우: 파일명만 추출
+    - /static/으로 시작하면 제거
+    - 그 외: 그대로 반환 (static 폴더 기준 상대 경로로 가정)
+    """
+    if not image_path:
+        return ""
+    
+    # /static/으로 시작하면 제거
+    if image_path.startswith("/static/"):
+        return image_path[8:]  # "/static/" 길이만큼 제거
+    
+    # 절대 경로인 경우 파일명만 추출
+    path = Path(image_path)
+    if path.is_absolute():
+        return path.name
+    
+    # 상대 경로는 그대로 반환 (static 폴더 기준)
+    return image_path
+
+
 def load_dataset_definitions() -> List[DatasetDefinition]:
     """Return dataset definitions with resolved CSV paths."""
     _ensure_default_file()
@@ -77,8 +100,8 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
         memo_csv = _resolve_path(item["memo_csv"])
         link_csv = _resolve_path(item["link_csv"])
         
-        # image_path는 문자열로 유지 (static 폴더 경로이므로)
-        image_path = item.get("image_path", "")
+        # image_path는 static 폴더 기준 상대 경로로 정규화
+        image_path = _normalize_image_path(item.get("image_path", ""))
 
         datasets.append(
             DatasetDefinition(
