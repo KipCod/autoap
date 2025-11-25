@@ -55,6 +55,12 @@ uvicorn app.main:app --reload
 python -m app.main
 ```
 
+### 방법 3: 직접 실행
+
+```bash
+python app/main.py
+```
+
 애플리케이션이 실행되면 브라우저에서 `http://127.0.0.1:8000`으로 접속하세요.
 
 ## 데이터 저장 구조
@@ -247,7 +253,7 @@ auto_ap/
 
 ### ImportError: attempted relative import with no known parent package
 
-이 오류는 `python app/main.py`처럼 직접 실행할 때 발생합니다. 다음 방법 중 하나를 사용하세요:
+이 오류는 이전 버전에서 `python app/main.py`처럼 직접 실행할 때 발생했지만, 현재 버전에서는 자동으로 처리됩니다. 다음 방법 중 하나를 사용하세요:
 
 ```bash
 # 방법 1: uvicorn 사용 (권장)
@@ -255,6 +261,9 @@ uvicorn app.main:app --reload
 
 # 방법 2: Python 모듈로 실행
 python -m app.main
+
+# 방법 3: 직접 실행 (자동으로 import 경로 처리)
+python app/main.py
 ```
 
 ### CSV 파일이 생성되지 않아요
