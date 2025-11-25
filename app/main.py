@@ -5,16 +5,33 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .dataset_config import DatasetDefinition, load_dataset_definitions
-from .database import get_all_data, save_all_data
-from .models import ActionBundle, DatasetState, LinkEntry
-from .services import (
-    get_next_bundle_id,
-    get_next_link_id,
-    keyword_candidates,
-    normalize_commands,
-    sync_memos,
-)
+# 직접 실행과 모듈 실행 모두 지원
+try:
+    from .dataset_config import DatasetDefinition, load_dataset_definitions
+    from .database import get_all_data, save_all_data
+    from .models import ActionBundle, DatasetState, LinkEntry
+    from .services import (
+        get_next_bundle_id,
+        get_next_link_id,
+        keyword_candidates,
+        normalize_commands,
+        sync_memos,
+    )
+except ImportError:
+    # 직접 실행 시 (python app/main.py)
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent))
+    from dataset_config import DatasetDefinition, load_dataset_definitions
+    from database import get_all_data, save_all_data
+    from models import ActionBundle, DatasetState, LinkEntry
+    from services import (
+        get_next_bundle_id,
+        get_next_link_id,
+        keyword_candidates,
+        normalize_commands,
+        sync_memos,
+    )
 
 app = FastAPI(title="Action Bundle Manager")
 templates = Jinja2Templates(directory="app/templates")
@@ -57,6 +74,43 @@ def _get_dataset(dataset_id: str | None) -> Tuple[str, DatasetDefinition, Datase
     return resolved_id, DATASET_MAP[resolved_id], state
 
 
+def _layout_context(dataset_id: str, extra: dict, view: str = "bundles") -> dict:
+    context = dict(extra)
+    context.update(
+        {
+            "datasets": DATASET_DEFINITIONS,
+            "active_dataset_id": dataset_id,
+            "active_dataset": DATASET_MAP.get(dataset_id),
+            "current_view": view,
+        }
+    )
+    return context
+
+
+def _merge_tags(*parts: str) -> str:
+    tokens: List[str] = []
+    for part in parts:
+        if not part:
+            continue
+        for raw in part.split(","):
+            cleaned = raw.strip()
+            if cleaned and cleaned not in tokens:
+                tokens.append(cleaned)
+    return ", ".join(tokens)
+
+
+def _parse_optional_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
 def _save_dataset(dataset_id: str) -> None:
     """해당 세트의 데이터를 CSV에 저장"""
     definition = DATASET_MAP[dataset_id]
@@ -87,7 +141,7 @@ def read_home(
     view: str = "bundles",
 ) -> HTMLResponse:
     """홈 페이지 - 번들 목록 표시"""
-    dataset_id, definition, state = _get_dataset(dataset)
+    dataset_id, _, state = _get_dataset(dataset)
     view = view if view in {"bundles", "links"} else "bundles"
     all_bundles = list(state.bundles.values())
     all_bundles.sort(key=lambda b: b.id or 0, reverse=True)
@@ -123,33 +177,35 @@ def read_home(
     
     return templates.TemplateResponse(
         "home.html",
-        {
-            "request": request,
-            "bundles": bundle_cards,
-            "links": link_rows,
-            "query": query or "",
-            "datasets": DATASET_DEFINITIONS,
-            "active_dataset": definition,
-            "active_dataset_id": dataset_id,
-            "view": view,
-            "keyword_candidates": keyword_pool,
-            "bundle_options": all_bundles,
-        },
+        _layout_context(
+            dataset_id,
+            {
+                "request": request,
+                "bundles": bundle_cards,
+                "links": link_rows,
+                "query": query or "",
+                "view": view,
+                "keyword_candidates": keyword_pool,
+                "bundle_options": all_bundles,
+            },
+            view=view,
+        ),
     )
 
 
 @app.get("/bundle/new", response_class=HTMLResponse)
 def new_bundle_form(request: Request, dataset: str | None = None) -> HTMLResponse:
     """새 번들 생성 폼"""
-    dataset_id, definition, _ = _get_dataset(dataset)
+    dataset_id, _, _ = _get_dataset(dataset)
     return templates.TemplateResponse(
         "bundle_form.html",
-        {
-            "request": request,
-            "bundle": None,
-            "active_dataset": definition,
-            "active_dataset_id": dataset_id,
-        },
+        _layout_context(
+            dataset_id,
+            {
+                "request": request,
+                "bundle": None,
+            },
+        ),
     )
 
 
@@ -187,7 +243,7 @@ def create_bundle(
 @app.get("/bundle/{bundle_id}", response_class=HTMLResponse)
 def bundle_detail(bundle_id: int, request: Request, dataset: str | None = None) -> HTMLResponse:
     """번들 상세 페이지"""
-    dataset_id, definition, state = _get_dataset(dataset)
+    dataset_id, _, state = _get_dataset(dataset)
     bundle = state.bundles.get(bundle_id)
     if not bundle:
         raise HTTPException(status_code=404, detail="Bundle not found")
@@ -208,15 +264,16 @@ def bundle_detail(bundle_id: int, request: Request, dataset: str | None = None) 
 
     return templates.TemplateResponse(
         "bundle_detail.html",
-        {
-            "request": request,
-            "bundle": bundle,
-            "memos": memos,
-            "commands": command_list,
-            "active_dataset": definition,
-            "active_dataset_id": dataset_id,
-             "bundle_links": bundle_links,
-        },
+        _layout_context(
+            dataset_id,
+            {
+                "request": request,
+                "bundle": bundle,
+                "memos": memos,
+                "commands": command_list,
+                "bundle_links": bundle_links,
+            },
+        ),
     )
 
 
@@ -316,30 +373,52 @@ def delete_bundle(bundle_id: int, dataset: str = Form(...)) -> RedirectResponse:
 
 
 @app.post("/links")
-def create_link(
-    dataset: str = Form(...),
-    url: str = Form(...),
-    description: str = Form(""),
-    tags: str = Form(""),
-    bundle_id: str | None = Form(None),
-    command_order: str | None = Form(None),
-    return_to: str | None = Form(None),
-) -> RedirectResponse:
-    """링크 추가"""
-    dataset_id, _, state = _get_dataset(dataset)
-    link_id = get_next_link_id(state.links)
-    entry = LinkEntry(
-        id=link_id,
-        bundle_id=int(bundle_id) if bundle_id else None,
-        command_order=int(command_order) if command_order else None,
-        url=url.strip(),
-        description=description.strip(),
-        tags=tags.strip(),
-    )
-    state.links[link_id] = entry
-    _save_dataset(dataset_id)
-    target = return_to or f"/?dataset={dataset_id}&view=links"
-    return RedirectResponse(url=target, status_code=303)
+async def create_links(request: Request) -> RedirectResponse:
+    """여러 링크를 한 번에 추가"""
+    form = await request.form()
+    dataset_id, _, state = _get_dataset(form.get("dataset"))
+    return_to = form.get("return_to") or f"/?dataset={dataset_id}&view=links"
+    global_tags = form.get("global_tags", "").strip()
+    default_bundle = form.get("bundle_default", "")
+    default_command = form.get("command_default", "")
+    entries_blob = form.get("link_entries", "") or ""
+
+    lines = [line.strip() for line in entries_blob.replace("\r", "").split("\n")]
+    next_link_id = get_next_link_id(state.links)
+    created = 0
+
+    for line in lines:
+        if not line:
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        url = parts[0] if parts else ""
+        if not url:
+            continue
+        description = parts[1] if len(parts) >= 2 else ""
+        per_tags = parts[2] if len(parts) >= 3 else ""
+        per_bundle = parts[3] if len(parts) >= 4 else ""
+        per_command = parts[4] if len(parts) >= 5 else ""
+
+        bundle_value = _parse_optional_int(per_bundle or default_bundle)
+        command_value = _parse_optional_int(per_command or default_command)
+        tags = _merge_tags(per_tags, global_tags)
+
+        entry = LinkEntry(
+            id=next_link_id,
+            bundle_id=bundle_value,
+            command_order=command_value,
+            url=url,
+            description=description,
+            tags=tags,
+        )
+        state.links[next_link_id] = entry
+        next_link_id += 1
+        created += 1
+
+    if created:
+        _save_dataset(dataset_id)
+
+    return RedirectResponse(url=return_to, status_code=303)
 
 
 @app.post("/links/{link_id}/delete")
