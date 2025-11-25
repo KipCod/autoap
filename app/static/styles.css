@@ -241,14 +241,14 @@ button:hover {
     height: 100%;
 }
 
-.bundle-content {
+.bundle-card .bundle-content {
     margin-top: 0.5rem;
-    max-height: 120px;
+    max-height: 120px !important;
     overflow: hidden;
     position: relative;
 }
 
-.bundle-content::after {
+.bundle-card .bundle-content::after {
     content: "";
     position: absolute;
     bottom: 0;
