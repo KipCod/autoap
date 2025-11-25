@@ -8,10 +8,15 @@
 <body>
 <header>
     <div class="brand">
-        <h1><a href="/?dataset={{ active_dataset_id or '' }}">Action Bundle Manager</a></h1>
-        {% if active_dataset %}
-        <span class="dataset-label">{{ active_dataset.label }}</span>
-        {% endif %}
+        <h1><a href="/?dataset={{ active_dataset_id or '' }}&view={{ current_view or 'bundles' }}">Action Bundle Manager</a></h1>
+        <div class="dataset-switcher">
+            {% for dataset in datasets %}
+            <a class="dataset-tab {{ 'active' if dataset.id == active_dataset_id else '' }}"
+               href="/?dataset={{ dataset.id }}&view={{ current_view or 'bundles' }}">
+                {{ dataset.label }}
+            </a>
+            {% endfor %}
+        </div>
     </div>
     <nav>
         <a href="/bundle/new?dataset={{ active_dataset_id or '' }}">+ New Bundle</a>

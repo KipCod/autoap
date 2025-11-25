@@ -20,6 +20,7 @@ class DatasetDefinition:
     main_csv: Path
     memo_csv: Path
     link_csv: Path
+    image_path: str = ""
 
 
 def _ensure_default_file() -> None:
@@ -35,6 +36,7 @@ def _ensure_default_file() -> None:
                 "main_csv": "set_a_main.csv",
                 "memo_csv": "set_a_memos.csv",
                 "link_csv": "set_a_links.csv",
+                "image_path": "",
             },
             {
                 "id": "set_b",
@@ -42,6 +44,7 @@ def _ensure_default_file() -> None:
                 "main_csv": "set_b_main.csv",
                 "memo_csv": "set_b_memos.csv",
                 "link_csv": "set_b_links.csv",
+                "image_path": "",
             },
         ]
     }
@@ -67,6 +70,7 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
                 main_csv=main_csv,
                 memo_csv=memo_csv,
                 link_csv=link_csv,
+                image_path=item.get("image_path", ""),
             )
         )
 

@@ -1,53 +1,68 @@
 {% extends "layout.html" %}
 {% block content %}
-<section class="dataset-tabs">
-    {% for dataset in datasets %}
-    <a class="tab-button {{ 'active' if dataset.id == active_dataset_id else '' }}"
-       href="/?dataset={{ dataset.id }}&view={{ view }}{% if query and view == 'bundles' %}&query={{ query | urlencode }}{% endif %}">
-        {{ dataset.label }}
-    </a>
-    {% endfor %}
-</section>
-
 <section class="view-tabs">
     <a class="tab-button {{ 'active' if view == 'bundles' else '' }}" href="/?dataset={{ active_dataset_id }}&view=bundles">Bundles</a>
     <a class="tab-button {{ 'active' if view == 'links' else '' }}" href="/?dataset={{ active_dataset_id }}&view=links">Links</a>
+    {% if view == 'links' %}
+    <button type="button" class="tab-button add-link-trigger" id="openLinkForm">+ Links</button>
+    {% endif %}
 </section>
 
 {% if view == 'bundles' %}
-<section class="toolbar">
-    <form method="get" action="/">
-        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
-        <input type="hidden" name="view" value="bundles">
-        <input type="text" name="query" placeholder="Search by bundle or keywords" value="{{ query }}">
-        <button type="submit">Search</button>
-    </form>
-</section>
+<div class="search-image-layout">
+    <div class="search-keyword-section">
+        <section class="toolbar">
+            <form method="get" action="/">
+                <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+                <input type="hidden" name="view" value="bundles">
+                <input type="text" name="query" placeholder="Search by bundle or keywords" value="{{ query }}" class="search-input">
+                <button type="submit">Search</button>
+            </form>
+        </section>
 
-{% if keyword_candidates %}
-<section class="keyword-chips">
-    <strong>추천 키워드:</strong>
-    <div class="chip-row">
-        {% for keyword in keyword_candidates %}
-        <button class="chip" type="button" data-keyword="{{ keyword }}">{{ keyword }}</button>
-        {% endfor %}
+        {% if keyword_candidates %}
+        <section class="keyword-cloud">
+            <div class="keyword-header">
+                <strong>추천 키워드</strong>
+                {% if keyword_candidates|length > 15 %}
+                <button type="button" class="keyword-toggle" id="keywordToggle">▼</button>
+                {% endif %}
+            </div>
+            <div class="keyword-flow" id="keywordFlow">
+                {% for keyword in keyword_candidates %}
+                <span class="keyword-pill" data-keyword="{{ keyword }}">{{ keyword }}</span>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
     </div>
-</section>
-{% endif %}
+    <div class="image-section">
+        {% if active_dataset.image_path %}
+        <img src="{{ active_dataset.image_path }}" alt="{{ active_dataset.label }}" class="dataset-image">
+        {% endif %}
+    </div>
+</div>
 
 {% if bundles %}
 <section class="bundle-grid">
     {% for item in bundles %}
-    <article class="bundle-card">
+    <article class="bundle-card" data-bundle-id="{{ item.bundle.id }}">
         <header>
             <h2><a href="/bundle/{{ item.bundle.id }}?dataset={{ active_dataset_id }}">{{ item.bundle.bundle_name }}</a></h2>
             <span class="part">{{ item.bundle.part }}</span>
+            <button type="button" class="expand-toggle" aria-label="펼쳐보기">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 4.5L6 7.5L9 4.5"/>
+                </svg>
+            </button>
         </header>
-        <ol class="command-list">
-            {% for command in item.commands %}
-            <li>{{ command }}</li>
-            {% endfor %}
-        </ol>
+        <div class="bundle-content">
+            <ol class="command-list">
+                {% for command in item.commands %}
+                <li>{{ command }}</li>
+                {% endfor %}
+            </ol>
+        </div>
     </article>
     {% endfor %}
 </section>
@@ -58,68 +73,75 @@
 
 {% if view == 'links' %}
 <section class="link-manager">
-    <form method="post" action="/links" class="bundle-form link-form">
-        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
-        <input type="hidden" name="return_to" value="/?dataset={{ active_dataset_id }}&view=links">
-        <label>URL
-            <input type="url" name="url" placeholder="https://example.com" required>
-        </label>
-        <label>Description
-            <textarea name="description" rows="2" placeholder="링크 설명을 입력하세요."></textarea>
-        </label>
-        <label>Tags
-            <input type="text" name="tags" placeholder="쉼표로 구분된 태그 (선택)">
-        </label>
-        <label>Bundle (선택)
-            <select name="bundle_id">
-                <option value="">공용 링크</option>
-                {% for option in bundle_options %}
-                <option value="{{ option.id }}">{{ option.bundle_name }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <button type="submit">링크 추가</button>
-    </form>
+    <div id="linkFormContainer" class="link-form-panel collapsed">
+        <h3>Add Multiple Links</h3>
+        <form method="post" action="/links" class="bundle-form multi-link-form">
+            <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+            <input type="hidden" name="return_to" value="/?dataset={{ active_dataset_id }}&view=links">
+            <label>Link Entries
+                <textarea name="link_entries" rows="5" placeholder="https://example.com | description | tags | bundle id | command #
+https://example.org | focus connection test"></textarea>
+            </label>
+            <p class="hint">각 줄은 하나의 링크입니다. <code>|</code> 로 Description, Tags, Bundle ID, Command #를 순서대로 선택 입력하세요. Bundle ID는 숫자 ID입니다.</p>
+            <label>Default Bundle
+                <select name="bundle_default">
+                    <option value="">공용 링크</option>
+                    {% for option in bundle_options %}
+                    <option value="{{ option.id }}">{{ option.id }} · {{ option.bundle_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Default Command #
+                <input type="number" name="command_default" min="1" step="1" placeholder="기본 Command 번호 (선택)">
+            </label>
+            <label>Global Tags (모든 링크에 적용)
+                <input type="text" name="global_tags" placeholder="예: network, ssh">
+            </label>
+            <button type="submit">Save Links</button>
+        </form>
+    </div>
 
     {% if links %}
-    <table class="link-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Bundle</th>
-                <th>Command</th>
-                <th>URL</th>
-                <th>Description</th>
-                <th>Tags</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for item in links %}
-            <tr>
-                <td>{{ item.entry.id }}</td>
-                <td>{{ item.bundle.bundle_name if item.bundle else '공용' }}</td>
-                <td>
-                    {% if item.command_label %}
-                        #{{ item.entry.command_order }} — {{ item.command_label }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-                <td><a href="{{ item.entry.url }}" target="_blank" rel="noopener">{{ item.entry.url }}</a></td>
-                <td>{{ item.entry.description or '—' }}</td>
-                <td>{{ item.entry.tags or '—' }}</td>
-                <td>
-                    <form method="post" action="/links/{{ item.entry.id }}/delete">
-                        <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
-                        <input type="hidden" name="return_to" value="/?dataset={{ active_dataset_id }}&view=links">
-                        <button type="submit" class="link-delete">삭제</button>
-                    </form>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="link-table-wrapper">
+        <table class="link-table compact">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Bundle</th>
+                    <th>Command</th>
+                    <th>URL</th>
+                    <th>Description</th>
+                    <th>Tags</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in links %}
+                <tr>
+                    <td>{{ item.entry.id }}</td>
+                    <td>{{ item.bundle.bundle_name if item.bundle else '공용' }}</td>
+                    <td>
+                        {% if item.command_label %}
+                            #{{ item.entry.command_order }} — {{ item.command_label }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td><a href="{{ item.entry.url }}" target="_blank" rel="noopener">{{ item.entry.url }}</a></td>
+                    <td>{{ item.entry.description or '—' }}</td>
+                    <td>{{ item.entry.tags or '—' }}</td>
+                    <td>
+                        <form method="post" action="/links/{{ item.entry.id }}/delete">
+                            <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+                            <input type="hidden" name="return_to" value="/?dataset={{ active_dataset_id }}&view=links">
+                            <button type="submit" class="link-delete">삭제</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
     <p>등록된 링크가 없습니다.</p>
     {% endif %}
@@ -127,16 +149,58 @@
 {% endif %}
 
 <script>
-const keywordButtons = document.querySelectorAll(".chip[data-keyword]");
+const keywordTokens = document.querySelectorAll(".keyword-pill[data-keyword]");
 const searchInput = document.querySelector('input[name="query"]');
-keywordButtons.forEach((button) => {
-    button.addEventListener("click", () => {
+keywordTokens.forEach((token) => {
+    token.addEventListener("click", () => {
         if (searchInput) {
-            searchInput.value = button.dataset.keyword;
+            searchInput.value = token.dataset.keyword;
             searchInput.form.submit();
         }
     });
 });
+
+// 키워드 토글 기능
+const keywordToggle = document.getElementById("keywordToggle");
+const keywordFlow = document.getElementById("keywordFlow");
+if (keywordToggle && keywordFlow) {
+    let isExpanded = false;
+    keywordToggle.addEventListener("click", () => {
+        isExpanded = !isExpanded;
+        keywordFlow.classList.toggle("expanded", isExpanded);
+        keywordToggle.textContent = isExpanded ? "▲" : "▼";
+    });
+}
+
+// Bundle 카드 확장 기능
+document.querySelectorAll(".bundle-card").forEach((card) => {
+    const toggle = card.querySelector(".expand-toggle");
+    const content = card.querySelector(".bundle-content");
+    if (toggle && content) {
+        let isExpanded = false;
+        toggle.addEventListener("click", () => {
+            isExpanded = !isExpanded;
+            card.classList.toggle("expanded", isExpanded);
+            const svg = toggle.querySelector("svg path");
+            if (svg) {
+                svg.setAttribute("d", isExpanded ? "M3 7.5L6 4.5L9 7.5" : "M3 4.5L6 7.5L9 4.5");
+            }
+        });
+    }
+});
+
+const linkFormToggle = document.getElementById("openLinkForm");
+const linkFormContainer = document.getElementById("linkFormContainer");
+if (linkFormToggle && linkFormContainer) {
+    linkFormToggle.addEventListener("click", () => {
+        const isCollapsed = linkFormContainer.classList.toggle("collapsed");
+        if (!isCollapsed) {
+            const textarea = linkFormContainer.querySelector("textarea[name='link_entries']");
+            linkFormContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+            textarea?.focus();
+        }
+    });
+}
 </script>
 {% endblock %}
 
