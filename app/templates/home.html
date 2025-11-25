@@ -38,7 +38,7 @@
     </div>
     <div class="image-section">
         {% if active_dataset.image_path %}
-        <img src="{{ active_dataset.image_path }}" alt="{{ active_dataset.label }}" class="dataset-image">
+        <img src="{{ url_for('static', path=active_dataset.image_path) }}" alt="{{ active_dataset.label }}" class="dataset-image">
         {% endif %}
     </div>
 </div>

@@ -113,16 +113,19 @@ main {
     display: flex;
     gap: 1.5rem;
     margin-bottom: 1.5rem;
+    align-items: flex-start;
 }
 
 .search-keyword-section {
-    flex: 1;
+    flex: 0 0 50%;
     max-width: 50%;
+    min-width: 0;
 }
 
 .image-section {
-    flex: 1;
+    flex: 0 0 50%;
     max-width: 50%;
+    min-width: 0;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -188,26 +191,6 @@ button:hover {
     overflow: hidden;
 }
 
-.bundle-card:not(.expanded) .bundle-content {
-    max-height: 120px;
-    overflow: hidden;
-    position: relative;
-}
-
-.bundle-card:not(.expanded) .bundle-content::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    background: linear-gradient(to bottom, transparent, #fff);
-    pointer-events: none;
-}
-
-.bundle-card.expanded .bundle-content {
-    max-height: none;
-}
 
 .bundle-card header {
     display: flex;
@@ -260,6 +243,28 @@ button:hover {
 
 .bundle-content {
     margin-top: 0.5rem;
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bundle-content::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(to bottom, transparent, #fff);
+    pointer-events: none;
+}
+
+.bundle-card.expanded .bundle-content {
+    max-height: none;
+}
+
+.bundle-card.expanded .bundle-content::after {
+    display: none;
 }
 
 .command-list {

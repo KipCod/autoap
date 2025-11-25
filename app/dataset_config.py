@@ -52,6 +52,20 @@ def _ensure_default_file() -> None:
     CONFIG_PATH.write_text(json.dumps(default_payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def _resolve_path(path_str: str) -> Path:
+    """경로 문자열을 Path 객체로 변환.
+    
+    - 절대 경로인 경우: 그대로 사용
+    - 상대 경로인 경우: DATA_DIR 기준으로 해석
+    - 파일명만 있는 경우: DATA_DIR과 결합
+    """
+    path = Path(path_str)
+    if path.is_absolute():
+        return path
+    # 상대 경로인 경우 DATA_DIR 기준으로 해석
+    return (DATA_DIR / path).resolve()
+
+
 def load_dataset_definitions() -> List[DatasetDefinition]:
     """Return dataset definitions with resolved CSV paths."""
     _ensure_default_file()
@@ -59,9 +73,12 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
     datasets: List[DatasetDefinition] = []
 
     for item in raw.get("datasets", []):
-        main_csv = DATA_DIR / item["main_csv"]
-        memo_csv = DATA_DIR / item["memo_csv"]
-        link_csv = DATA_DIR / item["link_csv"]
+        main_csv = _resolve_path(item["main_csv"])
+        memo_csv = _resolve_path(item["memo_csv"])
+        link_csv = _resolve_path(item["link_csv"])
+        
+        # image_path는 문자열로 유지 (static 폴더 경로이므로)
+        image_path = item.get("image_path", "")
 
         datasets.append(
             DatasetDefinition(
@@ -70,7 +87,7 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
                 main_csv=main_csv,
                 memo_csv=memo_csv,
                 link_csv=link_csv,
-                image_path=item.get("image_path", ""),
+                image_path=image_path,
             )
         )
 
