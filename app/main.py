@@ -540,6 +540,31 @@ def export_links(dataset: str | None = None) -> StreamingResponse:
     )
 
 
+@app.get("/image/{dataset_id}")
+def get_dataset_image(dataset_id: str) -> FileResponse:
+    """데이터셋 이미지 제공"""
+    if dataset_id not in DATASET_MAP:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    definition = DATASET_MAP[dataset_id]
+    if not definition.image_path:
+        raise HTTPException(status_code=404, detail="Image not configured for this dataset")
+    
+    image_path = Path(definition.image_path)
+    
+    # 절대 경로인 경우 직접 사용
+    if image_path.is_absolute():
+        if not image_path.exists():
+            raise HTTPException(status_code=404, detail="Image file not found")
+        return FileResponse(str(image_path))
+    
+    # 상대 경로인 경우 static 폴더 기준
+    static_image_path = STATIC_DIR / definition.image_path
+    if not static_image_path.exists():
+        raise HTTPException(status_code=404, detail="Image file not found")
+    return FileResponse(str(static_image_path))
+
+
 if __name__ == "__main__":
     import uvicorn
 

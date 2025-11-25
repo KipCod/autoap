@@ -260,7 +260,8 @@ button:hover {
 }
 
 .bundle-card.expanded .bundle-content {
-    max-height: none;
+    max-height: none !important;
+    overflow: visible;
 }
 
 .bundle-card.expanded .bundle-content::after {
