@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple
+from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
@@ -20,7 +21,6 @@ try:
 except ImportError:
     # 직접 실행 시 (python app/main.py)
     import sys
-    from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent))
     from dataset_config import DatasetDefinition, load_dataset_definitions
     from database import get_all_data, save_all_data
@@ -33,9 +33,14 @@ except ImportError:
         sync_memos,
     )
 
+# 절대 경로로 static 폴더 설정
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
+
 app = FastAPI(title="Action Bundle Manager")
-templates = Jinja2Templates(directory="app/templates")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 DATASET_DEFINITIONS: List[DatasetDefinition] = load_dataset_definitions()
 DATASET_MAP: Dict[str, DatasetDefinition] = {dataset.id: dataset for dataset in DATASET_DEFINITIONS}
