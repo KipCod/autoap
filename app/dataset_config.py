@@ -67,9 +67,9 @@ def _resolve_path(path_str: str) -> Path:
 
 
 def _normalize_image_path(image_path: str) -> str:
-    """이미지 경로를 static 폴더 기준 상대 경로로 정규화.
+    """이미지 경로를 정규화.
     
-    - 절대 경로인 경우: 파일명만 추출
+    - 절대 경로인 경우: 그대로 반환 (절대 경로로 직접 사용)
     - /static/으로 시작하면 제거
     - 그 외: 그대로 반환 (static 폴더 기준 상대 경로로 가정)
     """
@@ -80,10 +80,10 @@ def _normalize_image_path(image_path: str) -> str:
     if image_path.startswith("/static/"):
         return image_path[8:]  # "/static/" 길이만큼 제거
     
-    # 절대 경로인 경우 파일명만 추출
+    # 절대 경로는 그대로 반환 (절대 경로로 직접 사용)
     path = Path(image_path)
     if path.is_absolute():
-        return path.name
+        return image_path
     
     # 상대 경로는 그대로 반환 (static 폴더 기준)
     return image_path

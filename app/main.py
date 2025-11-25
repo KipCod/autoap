@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -180,6 +180,18 @@ def read_home(
                 command_label = memo.command_text
         link_rows.append({"entry": link, "bundle": bundle, "command_label": command_label})
     
+    # 이미지 URL 생성
+    active_dataset = DATASET_MAP.get(dataset_id)
+    image_url = None
+    if active_dataset and active_dataset.image_path:
+        image_path = Path(active_dataset.image_path)
+        if image_path.is_absolute():
+            # 절대 경로인 경우 /image/{dataset_id} 엔드포인트 사용
+            image_url = f"/image/{dataset_id}"
+        else:
+            # 상대 경로인 경우 /static/... 사용
+            image_url = f"/static/{active_dataset.image_path}"
+    
     return templates.TemplateResponse(
         "home.html",
         _layout_context(
@@ -192,6 +204,7 @@ def read_home(
                 "view": view,
                 "keyword_candidates": keyword_pool,
                 "bundle_options": all_bundles,
+                "image_url": image_url,
             },
             view=view,
         ),
