@@ -180,17 +180,20 @@ def read_home(
                 command_label = memo.command_text
         link_rows.append({"entry": link, "bundle": bundle, "command_label": command_label})
     
-    # 이미지 URL 생성
+    # 이미지 URL 배열 생성
     active_dataset = DATASET_MAP.get(dataset_id)
-    image_url = None
-    if active_dataset and active_dataset.image_path:
-        image_path = Path(active_dataset.image_path)
-        if image_path.is_absolute():
-            # 절대 경로인 경우 /image/{dataset_id} 엔드포인트 사용
-            image_url = f"/image/{dataset_id}"
-        else:
-            # 상대 경로인 경우 /static/... 사용
-            image_url = f"/static/{active_dataset.image_path}"
+    image_urls = []
+    if active_dataset and active_dataset.image_paths:
+        for idx, image_path in enumerate(active_dataset.image_paths):
+            if not image_path:
+                continue
+            path = Path(image_path)
+            if path.is_absolute():
+                # 절대 경로인 경우 /image/{dataset_id}/{index} 엔드포인트 사용
+                image_urls.append(f"/image/{dataset_id}/{idx}")
+            else:
+                # 상대 경로인 경우 /static/... 사용
+                image_urls.append(f"/static/{image_path}")
     
     return templates.TemplateResponse(
         "home.html",
@@ -204,7 +207,9 @@ def read_home(
                 "view": view,
                 "keyword_candidates": keyword_pool,
                 "bundle_options": all_bundles,
-                "image_url": image_url,
+                "image_urls": image_urls,
+                "default_image_width": active_dataset.default_image_width if active_dataset else 500,
+                "default_image_height": active_dataset.default_image_height if active_dataset else 400,
             },
             view=view,
         ),
@@ -542,15 +547,25 @@ def export_links(dataset: str | None = None) -> StreamingResponse:
 
 @app.get("/image/{dataset_id}")
 def get_dataset_image(dataset_id: str) -> FileResponse:
-    """데이터셋 이미지 제공"""
+    """데이터셋 이미지 제공 (하위 호환성)"""
+    return get_dataset_image_by_index(dataset_id, 0)
+
+
+@app.get("/image/{dataset_id}/{image_index}")
+def get_dataset_image_by_index(dataset_id: str, image_index: int) -> FileResponse:
+    """데이터셋 이미지 제공 (인덱스별)"""
     if dataset_id not in DATASET_MAP:
         raise HTTPException(status_code=404, detail="Dataset not found")
     
     definition = DATASET_MAP[dataset_id]
-    if not definition.image_path:
+    if not definition.image_paths or image_index >= len(definition.image_paths):
         raise HTTPException(status_code=404, detail="Image not configured for this dataset")
     
-    image_path = Path(definition.image_path)
+    image_path_str = definition.image_paths[image_index]
+    if not image_path_str:
+        raise HTTPException(status_code=404, detail="Image not configured for this dataset")
+    
+    image_path = Path(image_path_str)
     
     # 절대 경로인 경우 직접 사용
     if image_path.is_absolute():
@@ -559,7 +574,7 @@ def get_dataset_image(dataset_id: str) -> FileResponse:
         return FileResponse(str(image_path))
     
     # 상대 경로인 경우 static 폴더 기준
-    static_image_path = STATIC_DIR / definition.image_path
+    static_image_path = STATIC_DIR / image_path_str
     if not static_image_path.exists():
         raise HTTPException(status_code=404, detail="Image file not found")
     return FileResponse(str(static_image_path))

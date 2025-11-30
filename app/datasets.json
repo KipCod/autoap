@@ -6,7 +6,12 @@
       "main_csv": "set_a_main.csv",
       "memo_csv": "set_a_memos.csv",
       "link_csv": "set_a_links.csv",
-      "image_path": ""
+      "image_paths": [
+        "C:/Users/john9/Downloads/network_img.png",
+        "C:/Users/john9/Downloads/network_img2.png"
+      ],
+      "default_image_width": 500,
+      "default_image_height": 400
     },
     {
       "id": "set_b",
@@ -14,7 +19,9 @@
       "main_csv": "set_b_main.csv",
       "memo_csv": "set_b_memos.csv",
       "link_csv": "set_b_links.csv",
-      "image_path": ""
+      "image_paths": [],
+      "default_image_width": 500,
+      "default_image_height": 400
     }
   ]
 }

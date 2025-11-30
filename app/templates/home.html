@@ -37,8 +37,27 @@
         {% endif %}
     </div>
     <div class="image-section">
-        {% if image_url %}
-        <img src="{{ image_url }}" alt="{{ active_dataset.label }}" class="dataset-image">
+        {% if image_urls and image_urls|length > 0 %}
+        <div class="image-container-wrapper">
+            <div class="image-controls">
+                <button type="button" class="image-switch-btn" id="imageSwitchBtn" title="이미지 전환">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 2L10 4L8 6M8 14L6 12L8 10"/>
+                        <path d="M2 8H14"/>
+                    </svg>
+                </button>
+                <button type="button" class="image-fullscreen-btn" id="imageFullscreenBtn" title="전체화면">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 2H6V6M10 2H14V6M14 10H10V14M6 10H2V14"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="image-container" id="imageContainer">
+                <img src="{{ image_urls[0] }}" alt="{{ active_dataset.label }}" class="dataset-image" id="datasetImage"
+                     style="width: {{ default_image_width }}px; height: {{ default_image_height }}px;">
+                <div class="image-resize-handle" id="resizeHandle"></div>
+            </div>
+        </div>
         {% endif %}
     </div>
 </div>
@@ -148,6 +167,24 @@ https://example.org | focus connection test"></textarea>
 </section>
 {% endif %}
 
+<!-- 전체화면 모달 -->
+<div id="fullscreenModal" class="fullscreen-modal" style="display: none;">
+    <div class="fullscreen-controls">
+        <button type="button" class="fullscreen-close-btn" id="closeFullscreenBtn" title="닫기 (ESC)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6L18 18"/>
+            </svg>
+        </button>
+        <button type="button" class="fullscreen-switch-btn" id="fullscreenSwitchBtn" title="이미지 전환" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 2L10 4L8 6M8 14L6 12L8 10"/>
+                <path d="M2 8H14"/>
+            </svg>
+        </button>
+    </div>
+    <img id="fullscreenImage" class="fullscreen-image" alt="전체화면 이미지">
+</div>
+
 <script>
 const keywordTokens = document.querySelectorAll(".keyword-pill[data-keyword]");
 const searchInput = document.querySelector('input[name="query"]');
@@ -200,6 +237,122 @@ if (linkFormToggle && linkFormContainer) {
             textarea?.focus();
         }
     });
+}
+
+// 이미지 전환 및 크기 조절 기능
+const imageSwitchBtn = document.getElementById("imageSwitchBtn");
+const datasetImage = document.getElementById("datasetImage");
+const resizeHandle = document.getElementById("resizeHandle");
+
+if (datasetImage && imageSwitchBtn) {
+    // 이미지 URL 배열 가져오기
+    const imageUrls = [
+        {% if image_urls %}
+        {% for url in image_urls %}
+        "{{ url }}"{% if not loop.last %},{% endif %}
+        {% endfor %}
+        {% endif %}
+    ];
+    
+    let currentImageIndex = 0;
+    
+    // 이미지 전환 기능
+    if (imageUrls.length > 1) {
+        imageSwitchBtn.style.display = "block";
+        imageSwitchBtn.addEventListener("click", () => {
+            currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
+            datasetImage.src = imageUrls[currentImageIndex];
+            // 전체화면 모드일 때도 이미지 업데이트
+            const fullscreenImg = document.getElementById("fullscreenImage");
+            if (fullscreenImg) {
+                fullscreenImg.src = imageUrls[currentImageIndex];
+            }
+        });
+    } else {
+        imageSwitchBtn.style.display = "none";
+    }
+    
+    // 전체화면 기능
+    const imageFullscreenBtn = document.getElementById("imageFullscreenBtn");
+    const fullscreenModal = document.getElementById("fullscreenModal");
+    const fullscreenImage = document.getElementById("fullscreenImage");
+    const closeFullscreenBtn = document.getElementById("closeFullscreenBtn");
+    
+    if (imageFullscreenBtn && fullscreenModal && fullscreenImage) {
+        imageFullscreenBtn.addEventListener("click", () => {
+            fullscreenImage.src = imageUrls[currentImageIndex];
+            fullscreenModal.style.display = "flex";
+            document.body.style.overflow = "hidden";
+        });
+        
+        if (closeFullscreenBtn) {
+            closeFullscreenBtn.addEventListener("click", () => {
+                fullscreenModal.style.display = "none";
+                document.body.style.overflow = "";
+            });
+        }
+        
+        // ESC 키로 닫기
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && fullscreenModal.style.display === "flex") {
+                fullscreenModal.style.display = "none";
+                document.body.style.overflow = "";
+            }
+        });
+        
+        // 모달 배경 클릭으로 닫기
+        fullscreenModal.addEventListener("click", (e) => {
+            if (e.target === fullscreenModal) {
+                fullscreenModal.style.display = "none";
+                document.body.style.overflow = "";
+            }
+        });
+        
+        // 전체화면 모드에서 이미지 전환
+        const fullscreenSwitchBtn = document.getElementById("fullscreenSwitchBtn");
+        if (fullscreenSwitchBtn && imageUrls.length > 1) {
+            fullscreenSwitchBtn.style.display = "block";
+            fullscreenSwitchBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
+                fullscreenImage.src = imageUrls[currentImageIndex];
+                datasetImage.src = imageUrls[currentImageIndex];
+            });
+        }
+    }
+    
+    // 드래그로 크기 조절
+    if (resizeHandle) {
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+        
+        resizeHandle.addEventListener("mousedown", (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = parseInt(window.getComputedStyle(datasetImage).width, 10);
+            startHeight = parseInt(window.getComputedStyle(datasetImage).height, 10);
+            e.preventDefault();
+        });
+        
+        document.addEventListener("mousemove", (e) => {
+            if (!isResizing) return;
+            
+            const width = startWidth + (e.clientX - startX);
+            const height = startHeight + (e.clientY - startY);
+            
+            if (width >= 100 && width <= 2000) {
+                datasetImage.style.width = width + "px";
+            }
+            if (height >= 100 && height <= 2000) {
+                datasetImage.style.height = height + "px";
+            }
+        });
+        
+        document.addEventListener("mouseup", () => {
+            isResizing = false;
+        });
+    }
 }
 </script>
 {% endblock %}

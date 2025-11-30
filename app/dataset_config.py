@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 DATA_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = DATA_DIR / "datasets.json"
@@ -20,7 +20,9 @@ class DatasetDefinition:
     main_csv: Path
     memo_csv: Path
     link_csv: Path
-    image_path: str = ""
+    image_paths: Optional[List[str]] = None
+    default_image_width: int = 500
+    default_image_height: int = 400
 
 
 def _ensure_default_file() -> None:
@@ -36,7 +38,9 @@ def _ensure_default_file() -> None:
                 "main_csv": "set_a_main.csv",
                 "memo_csv": "set_a_memos.csv",
                 "link_csv": "set_a_links.csv",
-                "image_path": "",
+                "image_paths": [],
+                "default_image_width": 500,
+                "default_image_height": 400,
             },
             {
                 "id": "set_b",
@@ -44,7 +48,9 @@ def _ensure_default_file() -> None:
                 "main_csv": "set_b_main.csv",
                 "memo_csv": "set_b_memos.csv",
                 "link_csv": "set_b_links.csv",
-                "image_path": "",
+                "image_paths": [],
+                "default_image_width": 500,
+                "default_image_height": 400,
             },
         ]
     }
@@ -89,6 +95,13 @@ def _normalize_image_path(image_path: str) -> str:
     return image_path
 
 
+def _normalize_image_paths(image_paths: Optional[List[str]]) -> List[str]:
+    """이미지 경로 배열을 정규화."""
+    if not image_paths:
+        return []
+    return [_normalize_image_path(path) for path in image_paths if path]
+
+
 def load_dataset_definitions() -> List[DatasetDefinition]:
     """Return dataset definitions with resolved CSV paths."""
     _ensure_default_file()
@@ -100,8 +113,16 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
         memo_csv = _resolve_path(item["memo_csv"])
         link_csv = _resolve_path(item["link_csv"])
         
-        # image_path는 static 폴더 기준 상대 경로로 정규화
-        image_path = _normalize_image_path(item.get("image_path", ""))
+        # image_paths 배열 처리 (하위 호환성을 위해 image_path도 지원)
+        image_paths = item.get("image_paths", [])
+        if not image_paths and "image_path" in item:
+            # 기존 image_path가 있으면 배열로 변환
+            old_path = item.get("image_path", "")
+            image_paths = [old_path] if old_path else []
+        
+        image_paths = _normalize_image_paths(image_paths)
+        default_image_width = item.get("default_image_width", 500)
+        default_image_height = item.get("default_image_height", 400)
 
         datasets.append(
             DatasetDefinition(
@@ -110,7 +131,9 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
                 main_csv=main_csv,
                 memo_csv=memo_csv,
                 link_csv=link_csv,
-                image_path=image_path,
+                image_paths=image_paths or None,
+                default_image_width=default_image_width,
+                default_image_height=default_image_height,
             )
         )
 
