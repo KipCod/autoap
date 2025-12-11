@@ -1,0 +1,12 @@
+Server
+    Physical
+        Rack
+    Virtual
+        VMware
+Storage
+    SAN
+        FC
+Network
+    Switch
+        Layer3
+

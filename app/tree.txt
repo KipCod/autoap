@@ -1,0 +1,28 @@
+Network
+    Router
+        Cisco
+            ASR9000
+            Nexus7000
+        Juniper
+            MX960
+    Switch
+        Layer2
+            Access
+            Distribution
+        Layer3
+            Core
+Storage
+    SAN
+        FC
+        iSCSI
+    NAS
+        NFS
+        CIFS
+Server
+    Physical
+        Rack
+        Blade
+    Virtual
+        VMware
+        Hyper-V
+

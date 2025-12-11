@@ -3,27 +3,28 @@
 <section class="view-tabs">
     <a class="tab-button {{ 'active' if view == 'bundles' else '' }}" href="/?dataset={{ active_dataset_id }}&view=bundles">Bundles</a>
     <a class="tab-button {{ 'active' if view == 'links' else '' }}" href="/?dataset={{ active_dataset_id }}&view=links">Links</a>
-    {% if view == 'links' %}
-    <button type="button" class="tab-button add-link-trigger" id="openLinkForm">+ Links</button>
-    {% endif %}
 </section>
 
 {% if view == 'bundles' %}
 <div class="search-image-layout">
     <div class="search-keyword-section">
         <section class="toolbar">
-            <form method="get" action="/">
+            <form method="get" action="/" class="search-form-bundles">
                 <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
                 <input type="hidden" name="view" value="bundles">
                 <input type="text" name="query" placeholder="Search by bundle or keywords" value="{{ query }}" class="search-input">
-                <button type="submit">Search</button>
+                <button type="submit" class="search-btn-compact">Search</button>
             </form>
+            <div class="bundle-controls">
+                <button type="button" class="expand-all-btn" id="expandAllBtn">Expand All</button>
+                <button type="button" class="shrink-all-btn" id="shrinkAllBtn">Shrink All</button>
+            </div>
         </section>
 
         {% if keyword_candidates %}
         <section class="keyword-cloud">
             <div class="keyword-header">
-                <strong>추천 키워드</strong>
+                <strong>Recommended Keywords</strong>
                 {% if keyword_candidates|length > 15 %}
                 <button type="button" class="keyword-toggle" id="keywordToggle">▼</button>
                 {% endif %}
@@ -40,13 +41,13 @@
         {% if image_urls and image_urls|length > 0 %}
         <div class="image-container-wrapper">
             <div class="image-controls">
-                <button type="button" class="image-switch-btn" id="imageSwitchBtn" title="이미지 전환">
+                <button type="button" class="image-switch-btn" id="imageSwitchBtn" title="Switch Image">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M8 2L10 4L8 6M8 14L6 12L8 10"/>
                         <path d="M2 8H14"/>
                     </svg>
                 </button>
-                <button type="button" class="image-fullscreen-btn" id="imageFullscreenBtn" title="전체화면">
+                <button type="button" class="image-fullscreen-btn" id="imageFullscreenBtn" title="Fullscreen">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M2 2H6V6M10 2H14V6M14 10H10V14M6 10H2V14"/>
                     </svg>
@@ -69,7 +70,7 @@
         <header>
             <h2><a href="/bundle/{{ item.bundle.id }}?dataset={{ active_dataset_id }}">{{ item.bundle.bundle_name }}</a></h2>
             <span class="part">{{ item.bundle.part }}</span>
-            <button type="button" class="expand-toggle" aria-label="펼쳐보기">
+            <button type="button" class="expand-toggle" aria-label="Expand">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 4.5L6 7.5L9 4.5"/>
                 </svg>
@@ -86,103 +87,291 @@
     {% endfor %}
 </section>
 {% else %}
-<p>등록된 번들이 없습니다. <a href="/bundle/new?dataset={{ active_dataset_id }}">첫 번들을 추가해보세요.</a></p>
+<p>No bundles registered. <a href="/bundle/new?dataset={{ active_dataset_id }}">Add your first bundle.</a></p>
 {% endif %}
 {% endif %}
 
 {% if view == 'links' %}
-<section class="link-manager">
-    <div id="linkFormContainer" class="link-form-panel collapsed">
-        <h3>Add Multiple Links</h3>
-        <form method="post" action="/links" class="bundle-form multi-link-form">
-            <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
-            <input type="hidden" name="return_to" value="/?dataset={{ active_dataset_id }}&view=links">
-            <label>Link Entries
-                <textarea name="link_entries" rows="5" placeholder="https://example.com | description | tags | bundle id | command #
-https://example.org | focus connection test"></textarea>
-            </label>
-            <p class="hint">각 줄은 하나의 링크입니다. <code>|</code> 로 Description, Tags, Bundle ID, Command #를 순서대로 선택 입력하세요. Bundle ID는 숫자 ID입니다.</p>
-            <label>Default Bundle
-                <select name="bundle_default">
-                    <option value="">공용 링크</option>
-                    {% for option in bundle_options %}
-                    <option value="{{ option.id }}">{{ option.id }} · {{ option.bundle_name }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>Default Command #
-                <input type="number" name="command_default" min="1" step="1" placeholder="기본 Command 번호 (선택)">
-            </label>
-            <label>Global Tags (모든 링크에 적용)
-                <input type="text" name="global_tags" placeholder="예: network, ssh">
-            </label>
-            <button type="submit">Save Links</button>
-        </form>
+<section class="link-manager-new">
+    <!-- 헤더: 세트 선택 + 버전 선택 + 관리 버튼 -->
+    <div class="links-header">
+        <div class="device-version-selector">
+            <div class="version-buttons">
+                {% for dataset in datasets %}
+                <a class="version-button {{ 'active' if dataset.id == active_dataset_id else '' }}"
+                   href="/?dataset={{ dataset.id }}&view=links{% if dataset.versions %}&version={{ dataset.versions[0].id }}{% endif %}">
+                    {{ dataset.label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% if active_dataset and active_dataset.versions %}
+        <div class="version-selector">
+            <div class="version-buttons">
+                {% for ver in active_dataset.versions %}
+                <a class="version-button {{ 'active' if (version or active_dataset.versions[0].id) == ver.id else '' }}"
+                   href="/?dataset={{ active_dataset_id }}&view=links&version={{ ver.id }}">
+                    {{ ver.label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <a href="/links/manage?dataset={{ active_dataset_id }}{% if version %}&version={{ version }}{% endif %}" class="manage-link-btn">+ Link</a>
     </div>
 
-    {% if links %}
-    <div class="link-table-wrapper">
-        <table class="link-table compact">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Bundle</th>
-                    <th>Command</th>
-                    <th>URL</th>
-                    <th>Description</th>
-                    <th>Tags</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for item in links %}
-                <tr>
-                    <td>{{ item.entry.id }}</td>
-                    <td>{{ item.bundle.bundle_name if item.bundle else '공용' }}</td>
-                    <td>
-                        {% if item.command_label %}
-                            #{{ item.entry.command_order }} — {{ item.command_label }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                    <td><a href="{{ item.entry.url }}" target="_blank" rel="noopener">{{ item.entry.url }}</a></td>
-                    <td>{{ item.entry.description or '—' }}</td>
-                    <td>{{ item.entry.tags or '—' }}</td>
-                    <td>
-                        <form method="post" action="/links/{{ item.entry.id }}/delete">
-                            <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
-                            <input type="hidden" name="return_to" value="/?dataset={{ active_dataset_id }}&view=links">
-                            <button type="submit" class="link-delete">삭제</button>
-                        </form>
-                    </td>
-                </tr>
+    <!-- 하드웨어 섹션 -->
+    {% if link_tree_data %}
+    <div class="hardware-section">
+        <h3>Hardware</h3>
+        {% if hardware_graph_data %}
+        <div class="hardware-graph-container">
+            <div id="hardwareGraph" style="width: 100%; height: 400px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff;"></div>
+        </div>
+        {% endif %}
+        <div class="keyword-tree">
+            {% macro render_tree_node(node_dict, level) %}
+            <div class="tree-node" data-level="{{ level }}">
+                <div class="tree-node-header">
+                    <button class="tree-toggle" type="button" data-keyword="{{ node_dict.keyword }}">
+                        <span class="toggle-icon">▶</span>
+                        <span class="keyword-name">{{ node_dict.keyword }}</span>
+                    </button>
+                </div>
+                <div class="tree-node-content" style="display: none;">
+                    {% if node_dict.procedures %}
+                    <div class="procedure-list compact">
+                        {% for proc in node_dict.procedures %}
+                        <div class="procedure-item">
+                            <a href="{{ proc.link }}" target="_blank" rel="noopener" class="procedure-code-link">{{ proc.code }}</a>
+                            <span class="procedure-title">{{ proc.title }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% for child in node_dict.children %}
+                        {{ render_tree_node(child, level + 1) }}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endmacro %}
+            {% for root_node in link_tree_data %}
+                {{ render_tree_node(root_node, 0) }}
             {% endfor %}
-            </tbody>
-        </table>
+        </div>
     </div>
-    {% else %}
-    <p>등록된 링크가 없습니다.</p>
     {% endif %}
+
+    <!-- 추가 키워드 섹션 -->
+    {% if other_keywords_data %}
+    <div class="other-keywords-section">
+        <h3>Additional Keywords</h3>
+        <div class="keyword-tree">
+            {% for root_node in other_keywords_data %}
+                {{ render_tree_node(root_node, 0) }}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 검색 섹션 (맨 밑) -->
+    <div class="search-section">
+        <h3>Search</h3>
+        <form method="get" action="/" class="search-form">
+            <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+            <input type="hidden" name="view" value="links">
+            {% if version %}
+            <input type="hidden" name="version" value="{{ version }}">
+            {% endif %}
+            <input type="text" name="search_query" placeholder="Search by title..." 
+                   value="{{ search_query or '' }}" 
+                   class="search-input">
+            <button type="submit" class="search-btn-compact">Search</button>
+        </form>
+        {% if search_query %}
+        <div class="search-results">
+            <h4>Search Results</h4>
+            <div class="procedure-list compact">
+                {% set query_lower = search_query.lower() %}
+                {% for entry in tagged_database %}
+                    {% if query_lower in entry.title.lower() %}
+                    <div class="procedure-item">
+                        <a href="{{ entry.link }}" target="_blank" rel="noopener" class="procedure-code-link">{{ entry.code }}</a>
+                        <span class="procedure-title">{{ entry.title }}</span>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </section>
+
+<script>
+// 트리 토글 기능
+document.querySelectorAll('.tree-toggle').forEach(toggle => {
+    toggle.addEventListener('click', function() {
+        const content = this.closest('.tree-node').querySelector('.tree-node-content');
+        const icon = this.querySelector('.toggle-icon');
+        const isExpanded = content.style.display !== 'none';
+        
+        if (isExpanded) {
+            content.style.display = 'none';
+            icon.textContent = '▶';
+        } else {
+            content.style.display = 'block';
+            icon.textContent = '▼';
+        }
+    });
+});
+
+// 키워드로 트리 노드 찾기 및 토글 열기 함수
+function expandTreeNodeByKeyword(keyword) {
+    const treeNodes = document.querySelectorAll('.tree-node');
+    for (const node of treeNodes) {
+        const keywordName = node.querySelector('.keyword-name');
+        if (keywordName && keywordName.textContent.trim() === keyword) {
+            // 해당 노드로 스크롤
+            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 부모 노드들을 모두 펼치기
+            let current = node;
+            while (current) {
+                const content = current.querySelector('.tree-node-content');
+                const toggle = current.querySelector('.tree-toggle');
+                const icon = current.querySelector('.toggle-icon');
+                
+                if (content && content.style.display === 'none') {
+                    content.style.display = 'block';
+                    if (icon) icon.textContent = '▼';
+                }
+                
+                // 부모 노드로 이동
+                current = current.parentElement?.closest('.tree-node');
+            }
+            
+            // 하이라이트 효과
+            node.style.backgroundColor = '#fef3c7';
+            setTimeout(() => {
+                node.style.backgroundColor = '';
+            }, 2000);
+            
+            break;
+        }
+    }
+}
+
+// Hardware 그래프 초기화
+{% if hardware_graph_data %}
+(function() {
+    const graphData = {{ hardware_graph_data | tojson }};
+    const container = document.getElementById('hardwareGraph');
+    
+    if (container && graphData && typeof vis !== 'undefined') {
+        const nodes = new vis.DataSet(graphData.nodes);
+        const edges = new vis.DataSet(graphData.edges);
+        
+        const data = {
+            nodes: nodes,
+            edges: edges
+        };
+        
+        const options = {
+            layout: {
+                hierarchical: {
+                    direction: 'UD',
+                    sortMethod: 'directed',
+                    levelSeparation: 100,
+                    nodeSpacing: 150,
+                    treeSpacing: 200,
+                }
+            },
+            physics: {
+                enabled: false
+            },
+            interaction: {
+                dragNodes: true,
+                dragView: true,
+                zoomView: true
+            },
+            nodes: {
+                shape: 'box',
+                margin: 10,
+                font: {
+                    size: 14,
+                    face: 'Segoe UI',
+                    color: '#000000'
+                },
+                color: {
+                    background: '#ffffff',
+                    border: '#000000',
+                    highlight: {
+                        background: '#f3f4f6',
+                        border: '#000000'
+                    }
+                },
+                borderWidth: 2
+            },
+            edges: {
+                color: {
+                    color: '#000000',
+                    highlight: '#000000'
+                }
+            },
+            edges: {
+                arrows: {
+                    to: {
+                        enabled: true,
+                        scaleFactor: 0.8
+                    }
+                },
+                smooth: {
+                    type: 'curvedCW',
+                    roundness: 0.2
+                }
+            }
+        };
+        
+        const network = new vis.Network(container, data, options);
+        
+        // 노드 클릭 이벤트
+        network.on('click', function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                expandTreeNodeByKeyword(nodeId);
+            }
+        });
+        
+        // 노드 호버 시 커서 변경
+        network.on('hoverNode', function(params) {
+            container.style.cursor = 'pointer';
+        });
+        
+        network.on('blurNode', function(params) {
+            container.style.cursor = 'default';
+        });
+    }
+})();
+{% endif %}
+</script>
 {% endif %}
 
 <!-- 전체화면 모달 -->
 <div id="fullscreenModal" class="fullscreen-modal" style="display: none;">
     <div class="fullscreen-controls">
-        <button type="button" class="fullscreen-close-btn" id="closeFullscreenBtn" title="닫기 (ESC)">
+        <button type="button" class="fullscreen-close-btn" id="closeFullscreenBtn" title="Close (ESC)">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6L6 18M6 6L18 18"/>
             </svg>
         </button>
-        <button type="button" class="fullscreen-switch-btn" id="fullscreenSwitchBtn" title="이미지 전환" style="display: none;">
+        <button type="button" class="fullscreen-switch-btn" id="fullscreenSwitchBtn" title="Switch Image" style="display: none;">
             <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 2L10 4L8 6M8 14L6 12L8 10"/>
                 <path d="M2 8H14"/>
             </svg>
         </button>
     </div>
-    <img id="fullscreenImage" class="fullscreen-image" alt="전체화면 이미지">
+    <img id="fullscreenImage" class="fullscreen-image" alt="Fullscreen Image">
 </div>
 
 <script>
@@ -225,6 +414,42 @@ document.querySelectorAll(".bundle-card").forEach((card) => {
         });
     }
 });
+
+// Expand All / Shrink All 기능
+const expandAllBtn = document.getElementById("expandAllBtn");
+const shrinkAllBtn = document.getElementById("shrinkAllBtn");
+
+if (expandAllBtn) {
+    expandAllBtn.addEventListener("click", () => {
+        document.querySelectorAll(".bundle-card").forEach((card) => {
+            const toggle = card.querySelector(".expand-toggle");
+            const content = card.querySelector(".bundle-content");
+            if (toggle && content && !card.classList.contains("expanded")) {
+                card.classList.add("expanded");
+                const svg = toggle.querySelector("svg path");
+                if (svg) {
+                    svg.setAttribute("d", "M3 7.5L6 4.5L9 7.5");
+                }
+            }
+        });
+    });
+}
+
+if (shrinkAllBtn) {
+    shrinkAllBtn.addEventListener("click", () => {
+        document.querySelectorAll(".bundle-card").forEach((card) => {
+            const toggle = card.querySelector(".expand-toggle");
+            const content = card.querySelector(".bundle-content");
+            if (toggle && content && card.classList.contains("expanded")) {
+                card.classList.remove("expanded");
+                const svg = toggle.querySelector("svg path");
+                if (svg) {
+                    svg.setAttribute("d", "M3 4.5L6 7.5L9 4.5");
+                }
+            }
+        });
+    });
+}
 
 const linkFormToggle = document.getElementById("openLinkForm");
 const linkFormContainer = document.getElementById("linkFormContainer");

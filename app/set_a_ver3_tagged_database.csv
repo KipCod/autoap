@@ -1,0 +1,17 @@
+코드,제목,link,tag
+SRV001,Rack Server Installation v3,https://arxiv.org/abs/2303.00001,Rack
+SRV002,Blade Server Setup v3,https://arxiv.org/abs/2303.00002,Blade
+SRV003,VMware ESXi Installation v3,https://arxiv.org/abs/2303.00003,VMware
+SRV004,Hyper-V Configuration v3,https://arxiv.org/abs/2303.00004,Hyper-V
+NET005,Juniper MX960 Setup v3,https://arxiv.org/abs/2303.00005,MX960
+NET008,Layer3 Core Switch Setup v3,https://arxiv.org/abs/2303.00006,Core
+STO002,iSCSI Storage Setup v3,https://arxiv.org/abs/2303.00007,iSCSI
+CFG002,Incremental Backup Guide v3,https://arxiv.org/abs/2303.00008,Incremental
+CFG003,Point-in-time Restore v3,https://arxiv.org/abs/2303.00009,Point-in-time
+MON001,CPU Performance Monitoring v3,https://arxiv.org/abs/2303.00010,CPU
+MON003,Disk I/O Monitoring v3,https://arxiv.org/abs/2303.00011,Disk
+MON005,Alert Configuration v3,https://arxiv.org/abs/2303.00012,Alerts
+TSH001,Network Connectivity Test v3,https://arxiv.org/abs/2303.00013,Connectivity
+TSH003,System Log Analysis v3,https://arxiv.org/abs/2303.00014,Logs
+REST001,General Maintenance Guide v3,https://arxiv.org/abs/2303.00015,REST
+

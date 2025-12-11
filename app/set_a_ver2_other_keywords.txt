@@ -1,0 +1,18 @@
+Configuration
+    Backup
+        Full
+        Incremental
+    Restore
+        Full
+Monitoring
+    Performance
+        CPU
+        Memory
+        Disk
+    Health
+        Status
+Troubleshooting
+    System
+        Logs
+        Errors
+

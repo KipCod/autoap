@@ -1,0 +1,18 @@
+코드,제목,link,tag
+MON001,CPU Performance Monitoring B1,https://arxiv.org/abs/2401.00001,CPU
+MON002,Memory Usage Tracking B1,https://arxiv.org/abs/2401.00002,Memory
+MON003,Disk I/O Monitoring B1,https://arxiv.org/abs/2401.00003,Disk
+MON004,System Health Status B1,https://arxiv.org/abs/2401.00004,Status
+MON005,Alert Configuration B1,https://arxiv.org/abs/2401.00005,Alerts
+TSH001,Network Connectivity Test B1,https://arxiv.org/abs/2401.00006,Connectivity
+TSH002,Latency Troubleshooting B1,https://arxiv.org/abs/2401.00007,Latency
+TSH003,System Log Analysis B1,https://arxiv.org/abs/2401.00008,Logs
+TSH004,Error Diagnosis Guide B1,https://arxiv.org/abs/2401.00009,Errors
+CFG001,Full Backup Procedure B1,https://arxiv.org/abs/2401.00010,Full
+CFG002,Incremental Backup Guide B1,https://arxiv.org/abs/2401.00011,Incremental
+CFG003,Point-in-time Restore B1,https://arxiv.org/abs/2401.00012,Point-in-time
+NET001,Router Configuration Guide B1,https://arxiv.org/abs/2401.00013,Router
+NET002,Switch Setup Procedure B1,https://arxiv.org/abs/2401.00014,Switch
+NET006,Layer2 Access Switch Config B1,https://arxiv.org/abs/2401.00015,Access
+REST001,General Maintenance Guide B1,https://arxiv.org/abs/2401.00016,REST
+

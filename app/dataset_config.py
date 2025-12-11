@@ -6,9 +6,21 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
+from dataclasses import field
 
 DATA_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = DATA_DIR / "datasets.json"
+
+
+@dataclass(frozen=True)
+class VersionDefinition:
+    """Version definition with tree and database files."""
+
+    id: str
+    label: str
+    tree_txt: Optional[Path] = None
+    other_keywords_txt: Optional[Path] = None
+    tagged_database_csv: Optional[Path] = None
 
 
 @dataclass(frozen=True)
@@ -20,6 +32,7 @@ class DatasetDefinition:
     main_csv: Path
     memo_csv: Path
     link_csv: Path
+    versions: List[VersionDefinition] = field(default_factory=list)
     image_paths: Optional[List[str]] = None
     default_image_width: int = 500
     default_image_height: int = 400
@@ -113,6 +126,56 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
         memo_csv = _resolve_path(item["memo_csv"])
         link_csv = _resolve_path(item["link_csv"])
         
+        # versions 배열 처리
+        versions: List[VersionDefinition] = []
+        for ver_item in item.get("versions", []):
+            tree_txt = None
+            if "tree_txt" in ver_item and ver_item["tree_txt"]:
+                tree_txt = _resolve_path(ver_item["tree_txt"])
+            
+            other_keywords_txt = None
+            if "other_keywords_txt" in ver_item and ver_item["other_keywords_txt"]:
+                other_keywords_txt = _resolve_path(ver_item["other_keywords_txt"])
+            
+            tagged_database_csv = None
+            if "tagged_database_csv" in ver_item and ver_item["tagged_database_csv"]:
+                tagged_database_csv = _resolve_path(ver_item["tagged_database_csv"])
+            
+            versions.append(
+                VersionDefinition(
+                    id=ver_item["id"],
+                    label=ver_item.get("label", ver_item["id"]),
+                    tree_txt=tree_txt,
+                    other_keywords_txt=other_keywords_txt,
+                    tagged_database_csv=tagged_database_csv,
+                )
+            )
+        
+        # 하위 호환성: 기존 tree_txt 등이 있으면 버전으로 변환
+        if not versions:
+            tree_txt = None
+            if "tree_txt" in item and item["tree_txt"]:
+                tree_txt = _resolve_path(item["tree_txt"])
+            
+            other_keywords_txt = None
+            if "other_keywords_txt" in item and item["other_keywords_txt"]:
+                other_keywords_txt = _resolve_path(item["other_keywords_txt"])
+            
+            tagged_database_csv = None
+            if "tagged_database_csv" in item and item["tagged_database_csv"]:
+                tagged_database_csv = _resolve_path(item["tagged_database_csv"])
+            
+            if tree_txt or other_keywords_txt or tagged_database_csv:
+                versions.append(
+                    VersionDefinition(
+                        id="default",
+                        label="default",
+                        tree_txt=tree_txt,
+                        other_keywords_txt=other_keywords_txt,
+                        tagged_database_csv=tagged_database_csv,
+                    )
+                )
+        
         # image_paths 배열 처리 (하위 호환성을 위해 image_path도 지원)
         image_paths = item.get("image_paths", [])
         if not image_paths and "image_path" in item:
@@ -131,6 +194,7 @@ def load_dataset_definitions() -> List[DatasetDefinition]:
                 main_csv=main_csv,
                 memo_csv=memo_csv,
                 link_csv=link_csv,
+                versions=versions,
                 image_paths=image_paths or None,
                 default_image_width=default_image_width,
                 default_image_height=default_image_height,

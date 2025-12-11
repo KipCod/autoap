@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 # 직접 실행과 모듈 실행 모두 지원
 try:
-    from .dataset_config import DatasetDefinition, load_dataset_definitions
+    from .dataset_config import DatasetDefinition, VersionDefinition, load_dataset_definitions
     from .database import get_all_data, save_all_data
     from .models import ActionBundle, DatasetState, LinkEntry
     from .services import (
@@ -18,11 +18,22 @@ try:
         normalize_commands,
         sync_memos,
     )
+    from .link_tree import (
+        build_keyword_tree,
+        load_tagged_database,
+        save_tagged_database,
+        get_procedures_by_tag,
+        search_procedures_by_title,
+        TreeNode,
+        tree_node_to_dict,
+        build_networkx_graph,
+        graph_to_visjs_json,
+    )
 except ImportError:
     # 직접 실행 시 (python app/main.py)
     import sys
     sys.path.insert(0, str(Path(__file__).parent))
-    from dataset_config import DatasetDefinition, load_dataset_definitions
+    from dataset_config import DatasetDefinition, VersionDefinition, load_dataset_definitions
     from database import get_all_data, save_all_data
     from models import ActionBundle, DatasetState, LinkEntry
     from services import (
@@ -31,6 +42,17 @@ except ImportError:
         keyword_candidates,
         normalize_commands,
         sync_memos,
+    )
+    from link_tree import (
+        build_keyword_tree,
+        load_tagged_database,
+        save_tagged_database,
+        get_procedures_by_tag,
+        search_procedures_by_title,
+        TreeNode,
+        tree_node_to_dict,
+        build_networkx_graph,
+        graph_to_visjs_json,
     )
 
 # 절대 경로로 static 폴더 설정
@@ -56,10 +78,12 @@ def _load_data() -> None:
         bundles, memos_by_action, links = get_all_data(
             definition.main_csv, definition.memo_csv, definition.link_csv
         )
+        # 버전 구조에서는 tagged_database는 버전 선택 시 로드
         _dataset_state[definition.id] = DatasetState(
             bundles=bundles,
             memos_by_action=memos_by_action,
             links=links,
+            tagged_database=[],
         )
 
 
@@ -74,7 +98,13 @@ def _get_dataset(dataset_id: str | None) -> Tuple[str, DatasetDefinition, Datase
         bundles, memos_by_action, links = get_all_data(
             definition.main_csv, definition.memo_csv, definition.link_csv
         )
-        state = DatasetState(bundles=bundles, memos_by_action=memos_by_action, links=links)
+        # 버전 구조에서는 tagged_database는 버전 선택 시 로드
+        state = DatasetState(
+            bundles=bundles,
+            memos_by_action=memos_by_action,
+            links=links,
+            tagged_database=[],
+        )
         _dataset_state[resolved_id] = state
     return resolved_id, DATASET_MAP[resolved_id], state
 
@@ -142,6 +172,7 @@ def on_startup() -> None:
 def read_home(
     request: Request,
     dataset: str | None = None,
+    version: str | None = None,
     query: str | None = None,
     view: str = "bundles",
 ) -> HTMLResponse:
@@ -180,20 +211,63 @@ def read_home(
                 command_label = memo.command_text
         link_rows.append({"entry": link, "bundle": bundle, "command_label": command_label})
     
-    # 이미지 URL 배열 생성
+    # Links 탭용 데이터 로드
+    link_tree_data = None
+    other_keywords_data = None
+    tagged_database = []
+    search_query = None
+    active_version = None
+    hardware_graph_data = None
     active_dataset = DATASET_MAP.get(dataset_id)
-    image_urls = []
-    if active_dataset and active_dataset.image_paths:
-        for idx, image_path in enumerate(active_dataset.image_paths):
-            if not image_path:
-                continue
-            path = Path(image_path)
-            if path.is_absolute():
-                # 절대 경로인 경우 /image/{dataset_id}/{index} 엔드포인트 사용
-                image_urls.append(f"/image/{dataset_id}/{idx}")
-            else:
-                # 상대 경로인 경우 /static/... 사용
-                image_urls.append(f"/static/{image_path}")
+    
+    if view == "links" and active_dataset:
+        # 버전 선택 처리
+        version_id = version or (active_dataset.versions[0].id if active_dataset.versions else None)
+        if version_id:
+            for ver in active_dataset.versions:
+                if ver.id == version_id:
+                    active_version = ver
+                    break
+        
+        # 버전이 있으면 해당 버전의 데이터 로드
+        if active_version:
+            # tagged_database 로드
+            if active_version.tagged_database_csv:
+                tagged_database = load_tagged_database(active_version.tagged_database_csv)
+            
+            # tree.txt 파싱 및 프로시저 매칭
+            if active_version.tree_txt:
+                tree_nodes = build_keyword_tree(active_version.tree_txt)
+                link_tree_data = [tree_node_to_dict(node, tagged_database) for node in tree_nodes]
+                
+                # networkx 그래프 생성
+                graph = build_networkx_graph(tree_nodes)
+                if graph:
+                    hardware_graph_data = graph_to_visjs_json(graph)
+                
+                # networkx 그래프 생성
+                graph = build_networkx_graph(tree_nodes)
+                if graph:
+                    hardware_graph_data = graph_to_visjs_json(graph)
+            
+            # other_keywords.txt 파싱 및 프로시저 매칭
+            if active_version.other_keywords_txt:
+                other_nodes = build_keyword_tree(active_version.other_keywords_txt)
+                other_keywords_data = [tree_node_to_dict(node, tagged_database) for node in other_nodes]
+        
+        # 검색 쿼리 처리
+        search_query = request.query_params.get("search_query", "")
+    
+    # 이미지 URL 생성
+    image_url = None
+    if active_dataset and active_dataset.image_paths and len(active_dataset.image_paths) > 0:
+        image_path = Path(active_dataset.image_paths[0])
+        if image_path.is_absolute():
+            # 절대 경로인 경우 /image/{dataset_id} 엔드포인트 사용
+            image_url = f"/image/{dataset_id}"
+        else:
+            # 상대 경로인 경우 /static/... 사용
+            image_url = f"/static/{active_dataset.image_paths[0]}"
     
     return templates.TemplateResponse(
         "home.html",
@@ -207,9 +281,14 @@ def read_home(
                 "view": view,
                 "keyword_candidates": keyword_pool,
                 "bundle_options": all_bundles,
-                "image_urls": image_urls,
-                "default_image_width": active_dataset.default_image_width if active_dataset else 500,
-                "default_image_height": active_dataset.default_image_height if active_dataset else 400,
+                "image_url": image_url,
+                "link_tree_data": link_tree_data,
+                "other_keywords_data": other_keywords_data,
+                "tagged_database": tagged_database,
+                "search_query": search_query,
+                "active_version": active_version,
+                "version": version,
+                "hardware_graph_data": hardware_graph_data,
             },
             view=view,
         ),
@@ -547,25 +626,15 @@ def export_links(dataset: str | None = None) -> StreamingResponse:
 
 @app.get("/image/{dataset_id}")
 def get_dataset_image(dataset_id: str) -> FileResponse:
-    """데이터셋 이미지 제공 (하위 호환성)"""
-    return get_dataset_image_by_index(dataset_id, 0)
-
-
-@app.get("/image/{dataset_id}/{image_index}")
-def get_dataset_image_by_index(dataset_id: str, image_index: int) -> FileResponse:
-    """데이터셋 이미지 제공 (인덱스별)"""
+    """데이터셋 이미지 제공"""
     if dataset_id not in DATASET_MAP:
         raise HTTPException(status_code=404, detail="Dataset not found")
     
     definition = DATASET_MAP[dataset_id]
-    if not definition.image_paths or image_index >= len(definition.image_paths):
+    if not definition.image_paths or len(definition.image_paths) == 0:
         raise HTTPException(status_code=404, detail="Image not configured for this dataset")
     
-    image_path_str = definition.image_paths[image_index]
-    if not image_path_str:
-        raise HTTPException(status_code=404, detail="Image not configured for this dataset")
-    
-    image_path = Path(image_path_str)
+    image_path = Path(definition.image_paths[0])
     
     # 절대 경로인 경우 직접 사용
     if image_path.is_absolute():
@@ -574,10 +643,135 @@ def get_dataset_image_by_index(dataset_id: str, image_index: int) -> FileRespons
         return FileResponse(str(image_path))
     
     # 상대 경로인 경우 static 폴더 기준
-    static_image_path = STATIC_DIR / image_path_str
+    static_image_path = STATIC_DIR / definition.image_paths[0]
     if not static_image_path.exists():
         raise HTTPException(status_code=404, detail="Image file not found")
     return FileResponse(str(static_image_path))
+
+
+@app.get("/links/manage", response_class=HTMLResponse)
+def manage_links_page(request: Request, dataset: str | None = None, version: str | None = None) -> HTMLResponse:
+    """프로시저 관리 페이지"""
+    dataset_id, definition, state = _get_dataset(dataset)
+    
+    # 버전 선택 처리
+    version_id = version or (definition.versions[0].id if definition.versions else None)
+    active_version = None
+    if version_id:
+        for ver in definition.versions:
+            if ver.id == version_id:
+                active_version = ver
+                break
+    
+    # 모든 키워드 수집 (tree.txt + other_keywords.txt)
+    all_keywords = set()
+    tagged_database = []
+    
+    if active_version:
+        if active_version.tree_txt:
+            tree_nodes = build_keyword_tree(active_version.tree_txt)
+            for node in tree_nodes:
+                all_keywords.update(node.get_all_keywords())
+        if active_version.other_keywords_txt:
+            other_nodes = build_keyword_tree(active_version.other_keywords_txt)
+            for node in other_nodes:
+                all_keywords.update(node.get_all_keywords())
+        if active_version.tagged_database_csv:
+            tagged_database = load_tagged_database(active_version.tagged_database_csv)
+    
+    return templates.TemplateResponse(
+        "manage_links.html",
+        _layout_context(
+            dataset_id,
+            {
+                "request": request,
+                "tagged_database": tagged_database,
+                "all_keywords": sorted(all_keywords),
+                "active_version": active_version,
+                "version": version,
+            },
+            view="links",
+        ),
+    )
+
+
+@app.post("/links/update-procedure")
+async def update_procedure(request: Request) -> RedirectResponse:
+    """프로시저 태그 업데이트"""
+    form = await request.form()
+    dataset_id, definition, state = _get_dataset(form.get("dataset"))
+    version_id = form.get("version", "")
+    code = form.get("code", "").strip()
+    new_tag = form.get("tag", "").strip()
+    
+    # 버전 찾기
+    active_version = None
+    if version_id:
+        for ver in definition.versions:
+            if ver.id == version_id:
+                active_version = ver
+                break
+    
+    if active_version and active_version.tagged_database_csv:
+        # tagged_database 로드
+        tagged_database = load_tagged_database(active_version.tagged_database_csv)
+        
+        # 프로시저 찾아서 태그 업데이트
+        for entry in tagged_database:
+            if entry.get("code") == code:
+                entry["tag"] = new_tag
+                break
+        
+        # 저장
+        save_tagged_database(active_version.tagged_database_csv, tagged_database)
+    
+    return_url = f"/?dataset={dataset_id}&view=links"
+    if version_id:
+        return_url += f"&version={version_id}"
+    return RedirectResponse(url=return_url, status_code=303)
+
+
+@app.post("/links/add-procedure")
+async def add_procedure(request: Request) -> RedirectResponse:
+    """새 프로시저 추가"""
+    form = await request.form()
+    dataset_id, definition, state = _get_dataset(form.get("dataset"))
+    version_id = form.get("version", "")
+    
+    code = form.get("code", "").strip()
+    title = form.get("title", "").strip()
+    link = form.get("link", "").strip()
+    tag = form.get("tag", "").strip()
+    
+    # 버전 찾기
+    active_version = None
+    if version_id:
+        for ver in definition.versions:
+            if ver.id == version_id:
+                active_version = ver
+                break
+    
+    if code and title and link and active_version and active_version.tagged_database_csv:
+        # tagged_database 로드
+        tagged_database = load_tagged_database(active_version.tagged_database_csv)
+        
+        # 중복 체크
+        existing_codes = {e.get("code") for e in tagged_database}
+        if code not in existing_codes:
+            tagged_database.append({
+                "code": code,
+                "title": title,
+                "link": link,
+                "tag": tag or "REST",
+            })
+            
+            # 저장
+            save_tagged_database(active_version.tagged_database_csv, tagged_database)
+    
+    return_url = f"/?dataset={dataset_id}&view=links"
+    if version_id:
+        return_url += f"&version={version_id}"
+    return RedirectResponse(url=return_url, status_code=303)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,30 @@
         "C:/Users/john9/Downloads/network_img2.png"
       ],
       "default_image_width": 500,
-      "default_image_height": 400
+      "default_image_height": 400,
+      "versions": [
+        {
+          "id": "ver1",
+          "label": "ver1",
+          "tree_txt": "set_a_ver1_tree.txt",
+          "other_keywords_txt": "set_a_ver1_other_keywords.txt",
+          "tagged_database_csv": "set_a_ver1_tagged_database.csv"
+        },
+        {
+          "id": "ver2",
+          "label": "ver2",
+          "tree_txt": "set_a_ver2_tree.txt",
+          "other_keywords_txt": "set_a_ver2_other_keywords.txt",
+          "tagged_database_csv": "set_a_ver2_tagged_database.csv"
+        },
+        {
+          "id": "ver3",
+          "label": "ver3",
+          "tree_txt": "set_a_ver3_tree.txt",
+          "other_keywords_txt": "set_a_ver3_other_keywords.txt",
+          "tagged_database_csv": "set_a_ver3_tagged_database.csv"
+        }
+      ]
     },
     {
       "id": "set_b",
@@ -21,7 +44,23 @@
       "link_csv": "set_b_links.csv",
       "image_paths": [],
       "default_image_width": 500,
-      "default_image_height": 400
+      "default_image_height": 400,
+      "versions": [
+        {
+          "id": "ver1",
+          "label": "ver1",
+          "tree_txt": "set_b_ver1_tree.txt",
+          "other_keywords_txt": "set_b_ver1_other_keywords.txt",
+          "tagged_database_csv": "set_b_ver1_tagged_database.csv"
+        },
+        {
+          "id": "ver2",
+          "label": "ver2",
+          "tree_txt": "set_b_ver2_tree.txt",
+          "other_keywords_txt": "set_b_ver2_other_keywords.txt",
+          "tagged_database_csv": "set_b_ver2_tagged_database.csv"
+        }
+      ]
     }
   ]
 }

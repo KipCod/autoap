@@ -1,0 +1,271 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="manage-links-page">
+    <div class="page-header">
+        <h2>Procedure Management</h2>
+        <a href="/?dataset={{ active_dataset_id }}&view=links{% if version %}&version={{ version }}{% endif %}" class="back-link">← Back to Links</a>
+    </div>
+
+    <!-- 새 프로시저 추가 -->
+    <div class="manage-section">
+        <h3>Add New Procedure</h3>
+        <form method="post" action="/links/add-procedure" class="procedure-form">
+            <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+            {% if version %}
+            <input type="hidden" name="version" value="{{ version }}">
+            {% endif %}
+            <div class="form-row">
+                <label>
+                    Code
+                    <input type="text" name="code" required placeholder="e.g., NET001" maxlength="13">
+                </label>
+                <label>
+                    Title
+                    <input type="text" name="title" required placeholder="Procedure title" maxlength="98">
+                </label>
+            </div>
+            <div class="form-row">
+                <label>
+                    URL
+                    <input type="url" name="link" required placeholder="https://...">
+                </label>
+                <label>
+                    Tag
+                    <select name="tag">
+                        <option value="REST">REST</option>
+                        {% for keyword in all_keywords %}
+                        <option value="{{ keyword }}">{{ keyword }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <button type="submit" class="submit-btn">Add</button>
+        </form>
+    </div>
+
+    <!-- 기존 프로시저 태그 변경 -->
+    <div class="manage-section">
+        <h3>Update Procedure Tags</h3>
+        <div class="procedure-table-wrapper">
+            <table class="procedure-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Title</th>
+                        <th>Current Tag</th>
+                        <th>New Tag</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in tagged_database %}
+                    <tr>
+                        <td><code>{{ entry.code }}</code></td>
+                        <td>{{ entry.title }}</td>
+                        <td><span class="tag-badge">{{ entry.tag }}</span></td>
+                        <td>
+                            <form method="post" action="/links/update-procedure" class="inline-form">
+                                <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
+                                {% if version %}
+                                <input type="hidden" name="version" value="{{ version }}">
+                                {% endif %}
+                                <input type="hidden" name="code" value="{{ entry.code }}">
+                                <select name="tag" class="tag-select">
+                                    <option value="REST" {% if entry.tag == 'REST' %}selected{% endif %}>REST</option>
+                                    {% for keyword in all_keywords %}
+                                    <option value="{{ keyword }}" {% if entry.tag == keyword %}selected{% endif %}>{{ keyword }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="update-btn">Update</button>
+                            </form>
+                        </td>
+                        <td>
+                            <a href="{{ entry.link }}" target="_blank" rel="noopener" class="link-btn">Open</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<style>
+.manage-links-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #0f172a;
+}
+
+.back-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.manage-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.manage-section h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    color: #0f172a;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.procedure-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.procedure-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+.procedure-form input,
+.procedure-form select {
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.submit-btn {
+    padding: 0.6rem 1.5rem;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    align-self: flex-start;
+}
+
+.submit-btn:hover {
+    background: #1d4ed8;
+}
+
+.procedure-table-wrapper {
+    overflow-x: auto;
+}
+
+.procedure-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.procedure-table th,
+.procedure-table td {
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.procedure-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.9rem;
+}
+
+.procedure-table td {
+    font-size: 0.85rem;
+}
+
+.procedure-table code {
+    background: #f1f5f9;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+}
+
+.tag-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.inline-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.tag-select {
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.update-btn {
+    padding: 0.3rem 0.8rem;
+    background: #10b981;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.update-btn:hover {
+    background: #059669;
+}
+
+.link-btn {
+    padding: 0.3rem 0.8rem;
+    background: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+.link-btn:hover {
+    background: #1d4ed8;
+}
+</style>
+{% endblock %}
+
