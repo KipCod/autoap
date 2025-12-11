@@ -1,0 +1,19 @@
+Troubleshooting
+    Network
+        Connectivity
+        Latency
+    System
+        Logs
+        Errors
+Monitoring
+    Performance
+        Memory
+        Disk
+    Health
+        Status
+Configuration
+    Backup
+        Full
+    Restore
+        Full
+

@@ -1,0 +1,16 @@
+코드,제목,link,tag
+TSH001,Network Connectivity Test B2,https://arxiv.org/abs/2402.00001,Connectivity
+TSH002,Latency Troubleshooting B2,https://arxiv.org/abs/2402.00002,Latency
+TSH003,System Log Analysis B2,https://arxiv.org/abs/2402.00003,Logs
+TSH004,Error Diagnosis Guide B2,https://arxiv.org/abs/2402.00004,Errors
+MON002,Memory Usage Tracking B2,https://arxiv.org/abs/2402.00005,Memory
+MON003,Disk I/O Monitoring B2,https://arxiv.org/abs/2402.00006,Disk
+MON004,System Health Status B2,https://arxiv.org/abs/2402.00007,Status
+CFG001,Full Backup Procedure B2,https://arxiv.org/abs/2402.00008,Full
+CFG004,Full Restore Procedure B2,https://arxiv.org/abs/2402.00009,Full
+SRV001,Rack Server Installation B2,https://arxiv.org/abs/2402.00010,Rack
+SRV003,VMware ESXi Installation B2,https://arxiv.org/abs/2402.00011,VMware
+STO001,SAN FC Configuration B2,https://arxiv.org/abs/2402.00012,FC
+NET008,Layer3 Core Switch Setup B2,https://arxiv.org/abs/2402.00013,Core
+REST002,Common Procedures B2,https://arxiv.org/abs/2402.00014,REST
+

@@ -1,0 +1,12 @@
+Configuration
+    Backup
+        Full
+        Incremental
+    Restore
+        Point-in-time
+Network
+    Router
+        Cisco
+    Switch
+        Layer2
+

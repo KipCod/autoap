@@ -39,3 +39,4 @@ class DatasetState:
     bundles: Dict[int, ActionBundle] = field(default_factory=dict)
     memos_by_action: Dict[int, List[CommandMemo]] = field(default_factory=dict)
     links: Dict[int, LinkEntry] = field(default_factory=dict)
+    tagged_database: List[Dict[str, str]] = field(default_factory=list)

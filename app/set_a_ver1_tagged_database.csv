@@ -1,0 +1,24 @@
+코드,제목,link,tag
+NET001,Router Configuration Guide v1,https://arxiv.org/abs/2301.00001,Router
+NET002,Switch Setup Procedure v1,https://arxiv.org/abs/2301.00002,Switch
+NET003,Cisco ASR9000 Initial Setup v1,https://arxiv.org/abs/2301.00003,ASR9000
+NET004,Nexus7000 Configuration v1,https://arxiv.org/abs/2301.00004,Nexus7000
+NET005,Juniper MX960 Setup v1,https://arxiv.org/abs/2301.00005,MX960
+NET006,Layer2 Access Switch Config v1,https://arxiv.org/abs/2301.00006,Access
+NET007,Layer2 Distribution Switch v1,https://arxiv.org/abs/2301.00007,Distribution
+NET008,Layer3 Core Switch Setup v1,https://arxiv.org/abs/2301.00008,Core
+STO001,SAN FC Configuration v1,https://arxiv.org/abs/2301.00009,FC
+STO002,iSCSI Storage Setup v1,https://arxiv.org/abs/2301.00010,iSCSI
+SRV001,Rack Server Installation v1,https://arxiv.org/abs/2301.00013,Rack
+SRV002,Blade Server Setup v1,https://arxiv.org/abs/2301.00014,Blade
+CFG001,Full Backup Procedure v1,https://arxiv.org/abs/2301.00017,Full
+CFG002,Incremental Backup Guide v1,https://arxiv.org/abs/2301.00018,Incremental
+CFG003,Point-in-time Restore v1,https://arxiv.org/abs/2301.00019,Point-in-time
+MON001,CPU Performance Monitoring v1,https://arxiv.org/abs/2301.00020,CPU
+MON002,Memory Usage Tracking v1,https://arxiv.org/abs/2301.00021,Memory
+MON004,System Health Status v1,https://arxiv.org/abs/2301.00023,Status
+MON005,Alert Configuration v1,https://arxiv.org/abs/2301.00024,Alerts
+TSH001,Network Connectivity Test v1,https://arxiv.org/abs/2301.00025,Connectivity
+TSH002,Latency Troubleshooting v1,https://arxiv.org/abs/2301.00026,Latency
+REST001,General Maintenance Guide v1,https://arxiv.org/abs/2301.00029,REST
+

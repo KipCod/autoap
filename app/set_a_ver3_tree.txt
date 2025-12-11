@@ -1,0 +1,18 @@
+Server
+    Physical
+        Rack
+        Blade
+    Virtual
+        VMware
+        Hyper-V
+Network
+    Router
+        Juniper
+            MX960
+    Switch
+        Layer3
+            Core
+Storage
+    SAN
+        iSCSI
+

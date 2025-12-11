@@ -1,0 +1,19 @@
+Storage
+    SAN
+        FC
+        iSCSI
+    NAS
+        NFS
+        CIFS
+Network
+    Router
+        Cisco
+            Nexus7000
+    Switch
+        Layer2
+            Access
+Server
+    Virtual
+        VMware
+        Hyper-V
+

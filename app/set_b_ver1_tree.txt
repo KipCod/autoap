@@ -1,0 +1,16 @@
+Monitoring
+    Performance
+        CPU
+        Memory
+        Disk
+    Health
+        Status
+        Alerts
+Troubleshooting
+    Network
+        Connectivity
+        Latency
+    System
+        Logs
+        Errors
+

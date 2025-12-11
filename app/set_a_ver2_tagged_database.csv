@@ -1,0 +1,20 @@
+코드,제목,link,tag
+STO001,SAN FC Configuration v2,https://arxiv.org/abs/2302.00001,FC
+STO002,iSCSI Storage Setup v2,https://arxiv.org/abs/2302.00002,iSCSI
+STO003,NFS NAS Configuration v2,https://arxiv.org/abs/2302.00003,NFS
+STO004,CIFS NAS Setup v2,https://arxiv.org/abs/2302.00004,CIFS
+NET004,Nexus7000 Configuration v2,https://arxiv.org/abs/2302.00005,Nexus7000
+NET006,Layer2 Access Switch Config v2,https://arxiv.org/abs/2302.00006,Access
+SRV003,VMware ESXi Installation v2,https://arxiv.org/abs/2302.00007,VMware
+SRV004,Hyper-V Configuration v2,https://arxiv.org/abs/2302.00008,Hyper-V
+CFG001,Full Backup Procedure v2,https://arxiv.org/abs/2302.00009,Full
+CFG002,Incremental Backup Guide v2,https://arxiv.org/abs/2302.00010,Incremental
+CFG004,Full Restore Procedure v2,https://arxiv.org/abs/2302.00011,Full
+MON001,CPU Performance Monitoring v2,https://arxiv.org/abs/2302.00012,CPU
+MON002,Memory Usage Tracking v2,https://arxiv.org/abs/2302.00013,Memory
+MON003,Disk I/O Monitoring v2,https://arxiv.org/abs/2302.00014,Disk
+MON004,System Health Status v2,https://arxiv.org/abs/2302.00015,Status
+TSH003,System Log Analysis v2,https://arxiv.org/abs/2302.00016,Logs
+TSH004,Error Diagnosis Guide v2,https://arxiv.org/abs/2302.00017,Errors
+REST002,Common Procedures v2,https://arxiv.org/abs/2302.00018,REST
+

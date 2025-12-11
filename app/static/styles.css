@@ -584,3 +584,326 @@ td {
     margin-bottom: 0.75rem;
 }
 
+/* Links 탭 새 스타일 */
+.link-manager-new {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.links-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.device-version-selector,
+.version-selector {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    flex: 1;
+    min-width: 200px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.device-version-selector h3,
+.version-selector h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.95rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+.device-version-selector:has(.version-buttons:only-child),
+.version-selector:has(.version-buttons:only-child) {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.manage-link-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.manage-link-btn:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.device-version-selector h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+}
+
+.version-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.version-button {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.version-button:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.version-button.active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+
+.search-section,
+.hardware-section,
+.other-keywords-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-section h3,
+.hardware-section h3,
+.other-keywords-section h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    color: #0f172a;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.hardware-graph-container {
+    margin-bottom: 1.5rem;
+    background: #fff;
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.search-form .search-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.search-form button:not(.search-btn-compact) {
+    padding: 0.5rem 1rem;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.search-form button:not(.search-btn-compact):hover {
+    background: #1d4ed8;
+}
+
+.search-btn-compact,
+.search-form button.search-btn-compact {
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.8rem !important;
+    min-width: auto !important;
+    background: #2563eb !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+}
+
+.search-btn-compact:hover,
+.search-form button.search-btn-compact:hover {
+    background: #1d4ed8 !important;
+}
+
+.search-form-bundles {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.toolbar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.bundle-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.expand-all-btn,
+.shrink-all-btn {
+    padding: 0.35rem 0.6rem;
+    background: #64748b;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.expand-all-btn:hover {
+    background: #475569;
+}
+
+.shrink-all-btn:hover {
+    background: #475569;
+}
+
+.search-results h4 {
+    margin: 1rem 0 0.5rem 0;
+    font-size: 1rem;
+    color: #475569;
+}
+
+.keyword-tree {
+    margin-left: 0;
+}
+
+.tree-node {
+    margin-bottom: 0.25rem;
+}
+
+.tree-node-header {
+    margin-bottom: 0;
+}
+
+.tree-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-size: 0.9rem;
+    color: #0f172a;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.tree-toggle:hover {
+    background: #f1f5f9;
+}
+
+.toggle-icon {
+    display: inline-block;
+    width: 12px;
+    font-size: 0.7rem;
+    color: #64748b;
+    transition: transform 0.2s;
+}
+
+.keyword-name {
+    font-weight: 500;
+}
+
+.tree-node-content {
+    margin-left: 1.5rem;
+    margin-top: 0.25rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid #e2e8f0;
+}
+
+.procedure-list {
+    margin: 0.5rem 0;
+}
+
+.procedure-list.compact {
+    margin: 0.25rem 0;
+}
+
+.procedure-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.2rem 0.4rem;
+    margin-bottom: 0.1rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.procedure-item:hover {
+    background: #f8fafc;
+}
+
+.procedure-code-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+.procedure-code-link:visited {
+    color: #2563eb;
+}
+
+.procedure-code-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.procedure-title {
+    font-size: 0.9rem;
+    color: #475569;
+    flex: 1;
+    line-height: 1.3;
+}
+
+/* 검색 버튼 컴팩트 스타일 강제 적용 */
+.search-section .search-form button.search-btn-compact,
+.search-section form.search-form button.search-btn-compact {
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.8rem !important;
+    min-width: auto !important;
+    width: auto !important;
+    max-width: none !important;
+}
+

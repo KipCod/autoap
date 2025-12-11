@@ -1,0 +1,32 @@
+코드,제목,link,tag
+NET001,Router Configuration Guide,https://arxiv.org/abs/2301.00001,Router
+NET002,Switch Setup Procedure,https://arxiv.org/abs/2301.00002,Switch
+NET003,Cisco ASR9000 Initial Setup,https://arxiv.org/abs/2301.00003,ASR9000
+NET004,Nexus7000 Configuration,https://arxiv.org/abs/2301.00004,Nexus7000
+NET005,Juniper MX960 Setup,https://arxiv.org/abs/2301.00005,MX960
+NET006,Layer2 Access Switch Config,https://arxiv.org/abs/2301.00006,Access
+NET007,Layer2 Distribution Switch,https://arxiv.org/abs/2301.00007,Distribution
+NET008,Layer3 Core Switch Setup,https://arxiv.org/abs/2301.00008,Core
+STO001,SAN FC Configuration,https://arxiv.org/abs/2301.00009,FC
+STO002,iSCSI Storage Setup,https://arxiv.org/abs/2301.00010,iSCSI
+STO003,NFS NAS Configuration,https://arxiv.org/abs/2301.00011,NFS
+STO004,CIFS NAS Setup,https://arxiv.org/abs/2301.00012,CIFS
+SRV001,Rack Server Installation,https://arxiv.org/abs/2301.00013,Rack
+SRV002,Blade Server Setup,https://arxiv.org/abs/2301.00014,Blade
+SRV003,VMware ESXi Installation,https://arxiv.org/abs/2301.00015,VMware
+SRV004,Hyper-V Configuration,https://arxiv.org/abs/2301.00016,Hyper-V
+CFG001,Full Backup Procedure,https://arxiv.org/abs/2301.00017,Full
+CFG002,Incremental Backup Guide,https://arxiv.org/abs/2301.00018,Incremental
+CFG003,Point-in-time Restore,https://arxiv.org/abs/2301.00019,Point-in-time
+MON001,CPU Performance Monitoring,https://arxiv.org/abs/2301.00020,CPU
+MON002,Memory Usage Tracking,https://arxiv.org/abs/2301.00021,Memory
+MON003,Disk I/O Monitoring,https://arxiv.org/abs/2301.00022,Disk
+MON004,System Health Status,https://arxiv.org/abs/2301.00023,Status
+MON005,Alert Configuration,https://arxiv.org/abs/2301.00024,Alerts
+TSH001,Network Connectivity Test,https://arxiv.org/abs/2301.00025,Connectivity
+TSH002,Latency Troubleshooting,https://arxiv.org/abs/2301.00026,Latency
+TSH003,System Log Analysis,https://arxiv.org/abs/2301.00027,Logs
+TSH004,Error Diagnosis Guide,https://arxiv.org/abs/2301.00028,Errors
+REST001,General Maintenance Guide,https://arxiv.org/abs/2301.00029,REST
+REST002,Common Procedures,https://arxiv.org/abs/2301.00030,REST
+
