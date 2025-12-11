@@ -74,7 +74,14 @@ def build_keyword_tree(file_path: Path) -> List[TreeNode]:
 
 
 def load_tagged_database(csv_path: Path) -> List[Dict[str, str]]:
-    """tagged_database.csv 로드"""
+    """tagged_database.csv 로드
+    
+    지원하는 컬럼명:
+    - code: "코드", "code", "Code", "CODE"
+    - title: "제목", "title", "Title", "TITLE"
+    - link: "link", "url", "Link", "URL", "링크"
+    - tag: "tag", "Tag", "TAG", "태그"
+    """
     if not csv_path.exists():
         return []
     
@@ -82,11 +89,39 @@ def load_tagged_database(csv_path: Path) -> List[Dict[str, str]]:
     with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            # code 컬럼 찾기 (대소문자 무시, 한국어/영어 모두 지원)
+            code = ""
+            for key in row.keys():
+                if key.lower() in ["코드", "code"]:
+                    code = row[key].strip()
+                    break
+            
+            # title 컬럼 찾기
+            title = ""
+            for key in row.keys():
+                if key.lower() in ["제목", "title"]:
+                    title = row[key].strip()
+                    break
+            
+            # link 컬럼 찾기
+            link = ""
+            for key in row.keys():
+                if key.lower() in ["link", "url", "링크"]:
+                    link = row[key].strip()
+                    break
+            
+            # tag 컬럼 찾기
+            tag = ""
+            for key in row.keys():
+                if key.lower() in ["tag", "태그"]:
+                    tag = row[key].strip()
+                    break
+            
             entries.append({
-                "code": row.get("코드", row.get("code", "")).strip(),
-                "title": row.get("제목", row.get("title", "")).strip(),
-                "link": row.get("link", row.get("url", "")).strip(),
-                "tag": row.get("tag", "").strip(),
+                "code": code,
+                "title": title,
+                "link": link,
+                "tag": tag,
             })
     
     return entries
@@ -123,17 +158,39 @@ def search_procedures_by_title(
 
 
 def save_tagged_database(csv_path: Path, entries: List[Dict[str, str]]) -> None:
-    """tagged_database.csv 저장"""
+    """tagged_database.csv 저장
+    
+    기본적으로 한국어 컬럼명("코드", "제목")을 사용하지만,
+    기존 파일이 있으면 해당 파일의 컬럼명을 유지합니다.
+    """
+    # 기존 파일이 있으면 컬럼명 확인
+    fieldnames = ["코드", "제목", "link", "tag"]
+    if csv_path.exists():
+        with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f)
+            if reader.fieldnames:
+                # 기존 컬럼명 사용 (대소문자 유지)
+                fieldnames = list(reader.fieldnames)
+    
     with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["코드", "제목", "link", "tag"])
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for entry in entries:
-            writer.writerow({
-                "코드": entry.get("code", ""),
-                "제목": entry.get("title", ""),
-                "link": entry.get("link", ""),
-                "tag": entry.get("tag", ""),
-            })
+            row = {}
+            # 각 컬럼명에 맞게 매핑
+            for fieldname in fieldnames:
+                field_lower = fieldname.lower()
+                if field_lower in ["코드", "code"]:
+                    row[fieldname] = entry.get("code", "")
+                elif field_lower in ["제목", "title"]:
+                    row[fieldname] = entry.get("title", "")
+                elif field_lower in ["link", "url", "링크"]:
+                    row[fieldname] = entry.get("link", "")
+                elif field_lower in ["tag", "태그"]:
+                    row[fieldname] = entry.get("tag", "")
+                else:
+                    row[fieldname] = ""
+            writer.writerow(row)
 
 
 def tree_node_to_dict(node: TreeNode, tagged_entries: List[Dict[str, str]]) -> Dict:
