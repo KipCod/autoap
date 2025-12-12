@@ -11,6 +11,22 @@ from dataclasses import field
 DATA_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = DATA_DIR / "datasets.json"
 
+# 전역 설정
+APP_TITLE = "CoSy AP Manager"
+TAB_NAMES = {"bundles": "APs", "links": "Links"}
+
+
+def load_app_config() -> dict:
+    """앱 전역 설정 로드"""
+    if not CONFIG_PATH.exists():
+        return {"app_title": APP_TITLE, "tab_names": TAB_NAMES}
+    
+    raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    return {
+        "app_title": raw.get("app_title", APP_TITLE),
+        "tab_names": raw.get("tab_names", TAB_NAMES),
+    }
+
 
 @dataclass(frozen=True)
 class VersionDefinition:

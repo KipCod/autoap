@@ -1,4 +1,9 @@
 {
+  "app_title": "CoSy AP Manager",
+  "tab_names": {
+    "bundles": "APs",
+    "links": "Links"
+  },
   "datasets": [
     {
       "id": "set_a",

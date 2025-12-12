@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>New Action Bundle — {{ active_dataset.label if active_dataset else 'Dataset' }}</h2>
+<h2>New AP — {{ active_dataset.label if active_dataset else 'Dataset' }}</h2>
 <form action="/bundle" method="post" class="bundle-form">
     <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
     <label>Part
         <input type="text" name="part" required>
     </label>
-    <label>Bundle Name
+    <label>AP Name
         <input type="text" name="bundle_name" required>
     </label>
     <label>Keywords
@@ -20,7 +20,7 @@
         <ol id="previewList"></ol>
     </div>
     <p class="hint">Description은 명령어별 메모 섹션에서 입력할 수 있습니다.</p>
-    <button type="submit">Save Bundle</button>
+    <button type="submit">Save AP</button>
 </form>
 
 <script>

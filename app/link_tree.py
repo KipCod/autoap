@@ -194,8 +194,13 @@ def save_tagged_database(csv_path: Path, entries: List[Dict[str, str]]) -> None:
 
 
 def tree_node_to_dict(node: TreeNode, tagged_entries: List[Dict[str, str]]) -> Dict:
-    """트리 노드를 딕셔너리로 변환 (프로시저 포함)"""
-    keyword_set = node.get_all_keywords()
+    """트리 노드를 딕셔너리로 변환 (프로시저 포함)
+    
+    각 노드는 자신의 키워드에만 매칭되는 프로시저만 표시합니다.
+    하위 노드의 키워드는 포함하지 않습니다.
+    """
+    # 해당 노드의 키워드만 사용 (하위 노드 제외)
+    keyword_set = {node.keyword}
     procedures = get_procedures_by_tag(tagged_entries, keyword_set)
     
     return {

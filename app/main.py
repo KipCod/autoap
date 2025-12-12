@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 # 직접 실행과 모듈 실행 모두 지원
 try:
-    from .dataset_config import DatasetDefinition, VersionDefinition, load_dataset_definitions
+    from .dataset_config import DatasetDefinition, VersionDefinition, load_dataset_definitions, load_app_config
     from .database import get_all_data, save_all_data
     from .models import ActionBundle, DatasetState, LinkEntry
     from .services import (
@@ -33,7 +33,7 @@ except ImportError:
     # 직접 실행 시 (python app/main.py)
     import sys
     sys.path.insert(0, str(Path(__file__).parent))
-    from dataset_config import DatasetDefinition, VersionDefinition, load_dataset_definitions
+    from dataset_config import DatasetDefinition, VersionDefinition, load_dataset_definitions, load_app_config
     from database import get_all_data, save_all_data
     from models import ActionBundle, DatasetState, LinkEntry
     from services import (
@@ -67,6 +67,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 DATASET_DEFINITIONS: List[DatasetDefinition] = load_dataset_definitions()
 DATASET_MAP: Dict[str, DatasetDefinition] = {dataset.id: dataset for dataset in DATASET_DEFINITIONS}
 DEFAULT_DATASET_ID = DATASET_DEFINITIONS[0].id
+APP_CONFIG = load_app_config()
 
 # 메모리 내 데이터 저장소 (세트별)
 _dataset_state: Dict[str, DatasetState] = {}
@@ -117,6 +118,8 @@ def _layout_context(dataset_id: str, extra: dict, view: str = "bundles") -> dict
             "active_dataset_id": dataset_id,
             "active_dataset": DATASET_MAP.get(dataset_id),
             "current_view": view,
+            "app_title": APP_CONFIG.get("app_title", "CoSy AP Manager"),
+            "tab_names": APP_CONFIG.get("tab_names", {"bundles": "APs", "links": "Links"}),
         }
     )
     return context

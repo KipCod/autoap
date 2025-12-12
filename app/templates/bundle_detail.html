@@ -4,7 +4,7 @@
     <h2>{{ bundle.bundle_name }} (ID {{ bundle.id }}) — {{ active_dataset.label if active_dataset else '' }}</h2>
     <form action="/bundle/{{ bundle.id }}/delete" method="post" class="danger">
         <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
-        <button type="submit" onclick="return confirm('Delete this bundle?');">Delete</button>
+        <button type="submit" onclick="return confirm('Delete this AP?');">Delete</button>
     </form>
 
     <form action="/bundle/{{ bundle.id }}/update" method="post" class="bundle-form">
@@ -12,7 +12,7 @@
         <label>Part
             <input type="text" name="part" value="{{ bundle.part }}" required>
         </label>
-        <label>Bundle Name
+        <label>AP Name
             <input type="text" name="bundle_name" value="{{ bundle.bundle_name }}" required>
         </label>
         <label>Keywords
@@ -23,7 +23,7 @@
         </label>
         <p class="hint">Commands detected: {{ commands | length }}</p>
         <p class="hint">Description은 아래 Command Memos 섹션에서 명령어별로 관리합니다.</p>
-        <button type="submit">Update Bundle</button>
+        <button type="submit">Update AP</button>
     </form>
 </section>
 

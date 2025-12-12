@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 <section class="view-tabs">
-    <a class="tab-button {{ 'active' if view == 'bundles' else '' }}" href="/?dataset={{ active_dataset_id }}&view=bundles">Bundles</a>
-    <a class="tab-button {{ 'active' if view == 'links' else '' }}" href="/?dataset={{ active_dataset_id }}&view=links">Links</a>
+    <a class="tab-button {{ 'active' if view == 'bundles' else '' }}" href="/?dataset={{ active_dataset_id }}&view=bundles">{{ tab_names.get('bundles', 'APs') }}</a>
+    <a class="tab-button {{ 'active' if view == 'links' else '' }}" href="/?dataset={{ active_dataset_id }}&view=links">{{ tab_names.get('links', 'Links') }}</a>
 </section>
 
 {% if view == 'bundles' %}
@@ -12,7 +12,7 @@
             <form method="get" action="/" class="search-form-bundles">
                 <input type="hidden" name="dataset" value="{{ active_dataset_id }}">
                 <input type="hidden" name="view" value="bundles">
-                <input type="text" name="query" placeholder="Search by bundle or keywords" value="{{ query }}" class="search-input">
+                <input type="text" name="query" placeholder="Search by AP or keywords" value="{{ query }}" class="search-input">
                 <button type="submit" class="search-btn-compact">Search</button>
             </form>
             <div class="bundle-controls">
@@ -87,7 +87,7 @@
     {% endfor %}
 </section>
 {% else %}
-<p>No bundles registered. <a href="/bundle/new?dataset={{ active_dataset_id }}">Add your first bundle.</a></p>
+<p>No APs registered. <a href="/bundle/new?dataset={{ active_dataset_id }}">Add your first AP.</a></p>
 {% endif %}
 {% endif %}
 

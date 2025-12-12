@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ title or "Action Bundle Manager" }}</title>
+    <title>{{ title or app_title }}</title>
     <link rel="stylesheet" href="/static/styles.css?v=3">
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </head>
 <body>
 <header>
     <div class="brand">
-        <h1><a href="/?dataset={{ active_dataset_id or '' }}&view={{ current_view or 'bundles' }}">Action Bundle Manager</a></h1>
+        <h1><a href="/?dataset={{ active_dataset_id or '' }}&view={{ current_view or 'bundles' }}">{{ app_title }}</a></h1>
         <div class="dataset-switcher">
             {% for dataset in datasets %}
             <a class="dataset-tab {{ 'active' if dataset.id == active_dataset_id else '' }}"
@@ -20,7 +20,7 @@
         </div>
     </div>
     <nav>
-        <a href="/bundle/new?dataset={{ active_dataset_id or '' }}">+ New Bundle</a>
+        <a href="/bundle/new?dataset={{ active_dataset_id or '' }}">+ New AP</a>
         <a href="/export/main?dataset={{ active_dataset_id or '' }}">Export Main CSV</a>
         <a href="/export/memos?dataset={{ active_dataset_id or '' }}">Export Memo CSV</a>
         <a href="/export/links?dataset={{ active_dataset_id or '' }}">Export Link CSV</a>
